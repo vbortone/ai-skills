@@ -34,8 +34,12 @@ Where `<SKILL_DIR>` is the directory containing this skill (alongside `extract_t
 **External dependencies** (needed for OCR of images and scanned PDFs):
 
 - **Tesseract OCR**: The `pytesseract` package requires the Tesseract engine.
+  - macOS: `brew install tesseract`
+  - Linux (Debian/Ubuntu): `sudo apt-get install tesseract-ocr`
   - Windows: `choco install tesseract` or download from the UB Mannheim Tesseract GitHub releases page and add to PATH.
 - **Poppler**: The `pdf2image` package requires Poppler utilities.
+  - macOS: `brew install poppler`
+  - Linux (Debian/Ubuntu): `sudo apt-get install poppler-utils`
   - Windows: `choco install poppler` or download binaries and add to PATH.
 
 If the user only needs to process text-based PDFs and DOCX files, Tesseract and Poppler are not required.
