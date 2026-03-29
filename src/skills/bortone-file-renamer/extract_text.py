@@ -24,8 +24,8 @@ def extract_pdf(path: str) -> str:
     text_parts: list[str] = []
     ocr_pages: list[int] = []
 
-    for i, page in enumerate(doc):
-        page_text = page.get_text().strip()
+    for i in range(len(doc)):
+        page_text = doc[i].get_text().strip()
         if page_text:
             text_parts.append(page_text)
         else:
