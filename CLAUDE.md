@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal AI Skills library — a Node.js/TypeScript project organized around reusable AI agents and skills.
+Personal AI Skills library — a project organized around reusable AI agents and skills.
 
 ## Repository Structure
 
@@ -14,3 +14,5 @@ Personal AI Skills library — a Node.js/TypeScript project organized around reu
 ## Notes
 
 This repository is in early initialization. No build, test, or lint tooling has been configured yet. Update this file once a `package.json` and tooling are established.
+
+[Use Conventional Commit for all git commits](https://www.conventionalcommits.org/en/v1.0.0/#specification)
