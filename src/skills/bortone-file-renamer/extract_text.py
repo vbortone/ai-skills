@@ -55,7 +55,7 @@ def _ocr_pdf_pages(path: str, page_numbers: list[int]) -> str:
     for page_num in page_numbers:
         images = convert_from_path(path, first_page=page_num + 1, last_page=page_num + 1)
         for img in images:
-            page_text = pytesseract.image_to_string(img).strip()
+            page_text = pytesseract.image_to_string(img, output_type=pytesseract.Output.STRING).strip()
             if page_text:
                 text_parts.append(page_text)
 
@@ -76,7 +76,7 @@ def extract_image(path: str) -> str:
     import pytesseract
 
     img = Image.open(path)
-    return pytesseract.image_to_string(img).strip()
+    return pytesseract.image_to_string(img, output_type=pytesseract.Output.STRING).strip()
 
 
 def extract_text_file(path: str) -> str:
