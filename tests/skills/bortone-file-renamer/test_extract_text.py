@@ -18,7 +18,17 @@ import extract_text  # noqa: E402
 FIXTURES = os.path.normpath(os.path.join(os.path.dirname(__file__), "fixtures"))
 
 # Check if Tesseract is available for OCR tests
-HAS_TESSERACT = shutil.which("tesseract") is not None
+# On Windows, Tesseract may be installed but not on PATH
+HAS_TESSERACT = shutil.which("tesseract") is not None or os.path.isfile(
+    os.path.join(os.environ.get("PROGRAMFILES", ""), "Tesseract-OCR", "tesseract.exe")
+)
+
+# If Tesseract is installed but not on PATH, configure pytesseract to find it
+if HAS_TESSERACT and not shutil.which("tesseract"):
+    import pytesseract
+    pytesseract.pytesseract.tesseract_cmd = os.path.join(
+        os.environ.get("PROGRAMFILES", ""), "Tesseract-OCR", "tesseract.exe"
+    )
 
 
 # ---------------------------------------------------------------------------
