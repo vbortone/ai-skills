@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the bortone-file-renamer extract_text.py script."""
+"""Tests for the renaming-file-personal-style extract_text.py script."""
 
 import os
 import sys
@@ -9,7 +9,7 @@ import pytest
 
 # Add the skill directory to the path so we can import the module directly
 SKILL_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "src", "skills", "bortone-file-renamer")
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "src", "skills", "renaming-file-personal-style")
 )
 sys.path.insert(0, SKILL_DIR)
 

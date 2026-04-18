@@ -1,5 +1,5 @@
 ---
-name: bortone-file-renamer
+name: renaming-file-personal-style
 description: Rename documents into the standardized Bortone family file naming format based on document content analysis. Use when the user asks to rename files, documents, or organize household paperwork.
 ---
 
@@ -165,6 +165,10 @@ Choose the most fitting general topic for the document:
 | `Retirement` | 401k, IRA, pension, Social Security |
 | `Investment` | Brokerage statements, stock/fund correspondence |
 | `Utility` | Electric, gas, water, phone, internet bills |
+| `Dining` | Restaurant receipts, food delivery, cafe charges |
+| `Bar` | Bar tabs, nightlife, alcohol-related receipts |
+| `Travel` | Flights, hotels, rental cars, vacation bookings, transportation |
+| `Shopping` | Retail purchases, online orders, general merchandise receipts |
 | `Other` | Anything that does not fit the above categories |
 
 - If you create a topic of more than one word, use dashes instead of spaces.
