@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate test fixture files for the bortone-file-renamer tests."""
+"""Generate test fixture files for the renaming-file-personal-style tests."""
 
 import os
 
