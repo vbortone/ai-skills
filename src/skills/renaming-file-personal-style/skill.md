@@ -17,10 +17,10 @@ Rename files into the standardized format:
 
 ## Prerequisites — Check on First Run
 
-Before extracting text, verify dependencies are installed. Run this check:
+Requires **Python 3.10+**. Before extracting text, verify dependencies are installed:
 
 ```bash
-python -c "import fitz; import docx; import pdfplumber; import pytesseract; from PIL import Image; from pdf2image import convert_from_path"
+python -c "import fitz; import docx; import pdfplumber; from PIL import Image; import chandra"
 ```
 
 If it fails, install Python packages:
@@ -31,18 +31,11 @@ pip install -r "<SKILL_DIR>/requirements.txt"
 
 Where `<SKILL_DIR>` is the directory containing this skill (alongside `extract_text.py`).
 
-**External dependencies** (needed for OCR of images and scanned PDFs):
+**OCR model** (needed for images and scanned PDFs):
 
-- **Tesseract OCR**: The `pytesseract` package requires the Tesseract engine.
-  - macOS: `brew install tesseract`
-  - Linux (Debian/Ubuntu): `sudo apt-get install tesseract-ocr`
-  - Windows: `choco install tesseract` or download from the UB Mannheim Tesseract GitHub releases page and add to PATH.
-- **Poppler**: The `pdf2image` package requires Poppler utilities.
-  - macOS: `brew install poppler`
-  - Linux (Debian/Ubuntu): `sudo apt-get install poppler-utils`
-  - Windows: `choco install poppler` or download binaries and add to PATH.
+OCR is powered by [Chandra OCR 2](https://huggingface.co/datalab-to/chandra-ocr-2). The first OCR run downloads the model weights (several GB) to the HuggingFace cache (`~/.cache/huggingface`). A CUDA GPU is strongly recommended — CPU inference works but is slow. No external native binaries (Tesseract, Poppler) are required.
 
-If the user only needs to process text-based PDFs and DOCX files, Tesseract and Poppler are not required.
+If the user only needs to process text-based PDFs and DOCX files, the Chandra model is not loaded.
 
 ---
 
@@ -183,7 +176,7 @@ Keep the original file extension exactly as-is (case-sensitive).
 ## Error Handling
 
 - If Python dependencies are missing, install them automatically (see Prerequisites).
-- If Tesseract or Poppler are missing and needed, inform the user and provide installation instructions.
+- If the Chandra OCR model fails to load (e.g., download failure, out of memory), inform the user and fall back to filename/metadata-based naming for image or scanned-PDF inputs.
 - If a file cannot be read or extracted, report the error and skip it.
 - If the new filename already exists, append `_2`, `_3`, etc. before the extension.
 - Always preserve the original file extension.

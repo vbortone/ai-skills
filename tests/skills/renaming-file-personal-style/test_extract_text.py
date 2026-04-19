@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Tests for the renaming-file-personal-style extract_text.py script."""
 
+import importlib.util
 import os
 import sys
-import shutil
 
 import pytest
 
@@ -17,18 +17,8 @@ import extract_text  # noqa: E402
 
 FIXTURES = os.path.normpath(os.path.join(os.path.dirname(__file__), "fixtures"))
 
-# Check if Tesseract is available for OCR tests
-# On Windows, Tesseract may be installed but not on PATH
-HAS_TESSERACT = shutil.which("tesseract") is not None or os.path.isfile(
-    os.path.join(os.environ.get("PROGRAMFILES", ""), "Tesseract-OCR", "tesseract.exe")
-)
-
-# If Tesseract is installed but not on PATH, configure pytesseract to find it
-if HAS_TESSERACT and not shutil.which("tesseract"):
-    import pytesseract
-    pytesseract.pytesseract.tesseract_cmd = os.path.join(
-        os.environ.get("PROGRAMFILES", ""), "Tesseract-OCR", "tesseract.exe"
-    )
+# Chandra OCR 2 is optional at test time — image OCR tests skip if it's not installed.
+HAS_CHANDRA = importlib.util.find_spec("chandra") is not None
 
 
 # ---------------------------------------------------------------------------
@@ -81,11 +71,11 @@ class TestPlainTextExtraction:
 
 
 # ---------------------------------------------------------------------------
-# Image OCR (requires Tesseract)
+# Image OCR (requires Chandra OCR 2)
 # ---------------------------------------------------------------------------
 
 class TestImageExtraction:
-    @pytest.mark.skipif(not HAS_TESSERACT, reason="Tesseract OCR not installed")
+    @pytest.mark.skipif(not HAS_CHANDRA, reason="Chandra OCR not installed")
     def test_extracts_text_from_png(self):
         text = extract_text.extract_image(os.path.join(FIXTURES, "sample.png"))
         # OCR may not be perfect, check for key fragments
