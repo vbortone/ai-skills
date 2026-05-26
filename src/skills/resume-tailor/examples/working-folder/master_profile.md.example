@@ -1,0 +1,81 @@
+---
+name: Your Name
+last_refreshed: 2026-01-01
+last_refreshed_by: skill
+---
+
+# Master Profile — {Your Name}
+
+> Single source of truth for every tailored resume, cover letter, and recruiter pitch the skill generates. Edit this file as your career evolves; the skill reads it on every run. Anything not in here will not appear on outputs.
+
+## Identity
+
+- **Headline candidates:** the LinkedIn-style title you'd want on each resume variant. List 3-6 options so the tailor can pick the closest match per JD. Don't invent new titles at tailoring time.
+  - e.g. `Director of Software Development & Solution Architect`
+  - e.g. `Engineering Manager`
+  - e.g. `Principal Architect`
+- **Location / phone / email / LinkedIn:** what goes on every cover letter and resume.
+- **Self-identification:** the one-sentence elevator-pitch "who I am right now."
+
+## Anonymization Rule
+
+> The skill enforces this rule at build time via `tailor_config.json`. Document the prose version here so the LLM doing the tailoring understands *why* certain names get rewritten.
+
+Never name `{Sensitive Employer}` on outputs. Use `{Anonymized Framing}` instead. Inversion: if the JD you're tailoring against is from `{Sensitive Employer}` itself, naming them is correct.
+
+## Work history
+
+> List every role you've ever held. The skill consolidates multi-role same-company entries at tailoring time (single entry, senior title, full date span, merged bullets).
+
+### {Current Employer} — {Senior Title}
+- **Dates:** {start} – Present
+- **Location:** {city}
+- **Engagement / context:** one-line description of the work.
+- **Bullets:** list every achievement that could possibly be relevant to any future JD. The tailor will select the subset that matches each role. Lead each bullet with quantified impact when available.
+- **Sub-roles** (junior → senior): list intermediate titles + date spans for the tailor to consolidate.
+
+### {Previous Employer} — {Title}
+- (same shape as above)
+
+### {Older Employer, default-off}
+- **Default visibility:** off on resume, available for cover-letter context.
+- (rest same as above)
+
+## Education
+
+- `{Degree, School, Dates, GPA / honors if notable}` — list each on its own line. Always-include vs case-by-case is the tailor's call based on JD.
+
+## Certifications
+
+- `{Cert name — issuer — dates}` — list every active and lapsed credential. The tailor leads with whichever match the JD.
+
+## Skills inventory
+
+Group skills semantically, not chronologically. The tailor reorders groups so JD-required skills lead.
+
+- **Cloud & Infrastructure:** ...
+- **Languages:** ...
+- **Methodologies:** ...
+
+## Tailoring Rules
+
+> Your personal tactical rules. The skill reads these at tailoring time and applies them. This is where you encode "always include X", "default-off Y", "lead with Z for FinTech roles" — anything specific to your career.
+
+- **Default work-history scope:** which employers always appear on the resume, which are default-off, which can appear in cover-letter prose only.
+- **Headline mapping:** map JD archetypes to your headline candidates (e.g. *"Director of Engineering JDs → lead with X headline"*).
+- **Length defaults:** when to ship 1 page vs 2 pages.
+- **Multi-role consolidation:** if you held promotions inside one employer, how to present them.
+
+## Flags & Items to Confirm Before Use
+
+> Content that requires careful framing or must be excluded entirely. Re-read this section before every generation. The skill respects these rules unconditionally.
+
+| Flag | Resolution |
+| --- | --- |
+| `{specific item}` | NEVER use on outputs. Reason: ... |
+| `{another item}` | Use `{specific framing}` only. NEVER use `{forbidden framing}`. |
+
+## Refresh Log
+
+- `{YYYY-MM-DD}` — initial creation.
+- `{YYYY-MM-DD}` — added {what changed} from {source}.

@@ -1,0 +1,17 @@
+{
+  "anonymization": {
+    "forbidden_tokens": [
+      {
+        "label": "Acme Corp",
+        "pattern": "\\bacme\\s+corp\\b"
+      },
+      {
+        "label": "acme.com",
+        "pattern": "acme\\.com"
+      }
+    ],
+    "skip_when_target_employer_matches": [
+      "\\bacme\\b"
+    ]
+  }
+}

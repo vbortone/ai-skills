@@ -4,12 +4,12 @@ Most cover letters are throw-away. The ones that get read are short, specific, a
 
 ## Structure
 
-**Hard cap: 1 page. 2-3 paragraphs total. ~200-250 words is the sweet spot; never exceed 280.** Letterhead + date + recipient block + salutation + signoff + name eat ~3 inches of vertical space before any body text starts, so body content gets less than half a page. If a paragraph is running long, cut a sentence rather than spilling onto a second page. Anonymize the client per the master profile's Anonymization Rule (PwC -> "Big 4 Accounting Firm" / "the client").
+**Hard cap: 1 page. 2-3 paragraphs total. ~200-250 words is the sweet spot; never exceed 280.** Letterhead + date + recipient block + salutation + signoff + name eat ~3 inches of vertical space before any body text starts, so body content gets less than half a page. If a paragraph is running long, cut a sentence rather than spilling onto a second page. Anonymize per the user's Anonymization Rule (documented in `master_profile.md`, enforced by `tailor_config.json`).
 
 **Verification:** `scripts/build_cover_letter_docx.py` renders the cover letter to PDF via `scripts/verify_output.py` and fails (exit code 2) if the rendered PDF is more than 1 page — trim the longest paragraph by one sentence and regenerate. Don't ship a cover letter where the signature spills onto page 2.
 
 Use **2 paragraphs** when:
-- The hook and experience can be tightly fused (e.g., the JD asks for one specific thing Vincent obviously has).
+- The hook and experience can be tightly fused (e.g., the JD asks for one specific thing the user obviously has).
 - The role is a startup / direct-to-founder application where brevity wins.
 
 Use **3 paragraphs** (default) when there's a non-trivial differentiator or gap to address.
@@ -18,49 +18,45 @@ Use **3 paragraphs** (default) when there's a non-trivial differentiator or gap 
 
 State:
 1. The exact role being applied to.
-2. Vincent's strongest credibility signal for this role - current title, employer, and the closest-fit anchor (e.g., "25+ years architecting and modernizing enterprise platforms across financial services").
-3. A specific reason this *company* is interesting - not boilerplate. Pull one signal from the JD or company's recent news / website / LinkedIn (a product, a stated value, a recent announcement) and tie it to Vincent's track record.
+2. The user's strongest credibility signal for this role — current title, employer, and the closest-fit anchor (e.g., "25+ years architecting and modernizing enterprise platforms across financial services").
+3. A specific reason this *company* is interesting — not boilerplate. Pull one signal from the JD or company's recent news / website / LinkedIn (a product, a stated value, a recent announcement) and tie it to the user's track record.
 
 ### Paragraph 2 - Track record tied to JD priorities + differentiator (4-6 sentences)
 
-Pick 2-3 experiences from the master profile that map directly to the JD's top priorities, each with quantified impact (number, scale, outcome) and the technology / methodology / domain. Then close the paragraph with the single differentiator most relevant to this role:
-- Legal background + technical fluency (good for legal-tech, regulatory, governance-heavy roles)
-- MS FinTech (3.9 GPA) (good for fintech, capital markets, quant-adjacent roles)
-- AI-assisted engineering certifications + production AI work (good for AI-leadership, modernization roles)
-- 25+ year track record of cost-out and modernization wins (good for transformation roles)
+Pick 2-3 experiences from `master_profile.md` that map directly to the JD's top priorities, each with quantified impact (number, scale, outcome) and the technology / methodology / domain. Then close the paragraph with the single differentiator most relevant to this role. The user's `master_profile.md` → Tailoring Rules section may enumerate differentiators with JD-archetype mappings — follow them when present.
 
-Don't list all differentiators - pick the one most relevant. Use specific company / project names (`Wachtell, Lipton, Rosen & Katz`, `J.P. Morgan` for FinTech context) - recruiters read these and recognize the level of operating environment. Reference J.P. Morgan when the role is FinTech / capital markets even though it's omitted from the resume itself.
+Don't list all differentiators — pick the one most relevant. Specific company / project names recruiters recognize (large-name employers, well-known products) often signal the level of operating environment; use them when truthful. The cover letter MAY surface employer names that are default-off on the resume itself, when the JD's domain calls for that context.
 
 ### Paragraph 3 - Honest gap (if any) + close (2-3 sentences)
 
-If the JD has a domain or skill Vincent doesn't have hands-on, address it directly in one sentence - candor builds trust, especially for senior roles. Then close with one sentence inviting a conversation. Sign off with `Sincerely,` then the name.
+If the JD has a domain or skill the user doesn't have hands-on, address it directly in one sentence — candor builds trust, especially for senior roles. Then close with one sentence inviting a conversation. Sign off with `Sincerely,` then the user's name.
 
 If there's no meaningful gap to flag, this paragraph collapses into a single closing sentence and you're at 2 paragraphs total.
 
 ## Tone
 
 Match the JD's tone:
-- **Conservative corporate / Big 4 / regulated** - formal, measured, light on first-person superlatives.
-- **Modern tech company** - confident but not boastful, slightly less formal.
-- **Startup** - direct, results-forward, mention of velocity / ownership.
+- **Conservative corporate / regulated** — formal, measured, light on first-person superlatives.
+- **Modern tech company** — confident but not boastful, slightly less formal.
+- **Startup** — direct, results-forward, mention of velocity / ownership.
 
-Default to "warm and confident" - never breathless, never grovelling.
+Default to "warm and confident" — never breathless, never grovelling.
 
 ## What to avoid
 
-- "I'm passionate about" / "rockstar" / "ninja" / "10x" / "synergy" - clichés.
-- Restating the JD back at them - they wrote it.
-- Reciting the entire resume - the resume already does that.
-- Generic openings: "I am writing to apply for the position of..." - replace with a real hook.
-- Salutation guesses - use `Hiring Manager` if no name is in the JD; use the name if it is.
+- "I'm passionate about" / "rockstar" / "ninja" / "10x" / "synergy" — clichés.
+- Restating the JD back at them — they wrote it.
+- Reciting the entire resume — the resume already does that.
+- Generic openings: "I am writing to apply for the position of..." — replace with a real hook.
+- Salutation guesses — use `Hiring Manager` if no name is in the JD; use the name if it is.
 
 ## Letterhead
 
 Top of page:
 ```
-Vincent Bortone
-8349 NW 7th Pl, Plantation, FL 33317
-561-343-0765 · vbortone@gmail.com · linkedin.com/in/vincentbortone
+{User's Name}
+{Street Address, City, State Zip}
+{Phone} · {Email} · {LinkedIn URL}
 
 {Date in long form: May 6, 2026}
 
@@ -71,8 +67,10 @@ Hiring Manager *(or specific name if known)*
 
 Then: `Dear Hiring Manager,` (or `Dear {Last Name},`).
 
-Sign off: `Sincerely,` then `Vincent Bortone`.
+Sign off: `Sincerely,` then the user's name.
+
+All identity fields come from `master_profile.md` → Identity.
 
 ## File output
 
-Save as `{Company}_{Position}_{YYYY-MM-DD}_CoverLetter.docx` in the per-application subfolder. Use the same Calibri 11pt body, no fancy fonts, no graphics - same ATS rules as the resume.
+Save as `{Company}_{Position}_{YYYY-MM-DD}_CoverLetter.docx` in the per-application subfolder. Use the same Calibri 11pt body, no fancy fonts, no graphics — same ATS rules as the resume.

@@ -36,7 +36,7 @@ Use `{Company}_{Position}_{YYYY-MM-DD}_Resume.docx`. ATS often rename on upload,
 
 ## What about graphics-heavy "modern" resume templates?
 
-Skip them. They're optimized for human eyes (and Canva downloads). Vincent is applying to senior roles at companies that use Workday / Greenhouse / Lever ATSes — pure text wins every time. Save the visual flair for portfolio sites or LinkedIn.
+Skip them. They're optimized for human eyes (and Canva downloads). Most senior roles ship through Workday / Greenhouse / Lever ATSes — pure text wins every time. Save the visual flair for portfolio sites or LinkedIn.
 
 ## Skills section formatting
 
@@ -52,7 +52,7 @@ This is more readable than a wall of comma-separated keywords AND parses cleanly
 
 ## Keyword matching
 
-The JD's exact wording matters. If the JD says "Kubernetes" use "Kubernetes" — not "K8s" or "container orchestration". If the JD says "AWS" and Vincent's experience is Azure, do NOT write "AWS" — write "Azure" and call out cloud architecture transferability in the summary.
+The JD's exact wording matters. If the JD says "Kubernetes" use "Kubernetes" — not "K8s" or "container orchestration". If the JD says "AWS" and the user's experience is Azure, do NOT write "AWS" — write "Azure" and call out cloud architecture transferability in the summary.
 
 Do not stuff invisible white-text keywords. Some ATS detect this and reject. Modern parsers also ignore non-rendered text.
 

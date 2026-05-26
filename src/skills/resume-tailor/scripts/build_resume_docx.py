@@ -11,33 +11,33 @@ Or pipe JSON via stdin:
 JSON schema
 -----------
 {
-  "name": "Vincent Bortone",
-  "headline": "Director of Software Development & Solution Architect",
+  "name": "Jane Doe",
+  "headline": "Director of Engineering",
   "contact": {
-    "address": "Plantation, FL",
-    "phone": "561-343-0765",
-    "email": "vbortone@gmail.com",
-    "linkedin": "linkedin.com/in/vincentbortone"
+    "address": "City, State",
+    "phone": "555-555-5555",
+    "email": "jane@example.com",
+    "linkedin": "linkedin.com/in/janedoe"
   },
   "summary": "Three to four sentence summary tailored to the target role.",
   "experience": [
     {
-      "company": "Cognizant Technology Solutions",
-      "title": "Associate Director / System Architect",
+      "company": "Current Employer",
+      "title": "Senior Title",
       "dates": "08/2018 – Present",
-      "location": "Plantation, FL",
+      "location": "City, State",
       "context": "Optional one-line description of the engagement.",
       "bullets": [
-        "Architected the first cloud-native solution ...",
-        "Cut hundreds of person-hours of manual data processing ..."
+        "Quantified achievement that maps to the JD ...",
+        "Another quantified achievement ..."
       ]
     }
   ],
   "education": [
     {
-      "degree": "Master of Science in Financial Technology",
-      "school": "University of Central Florida",
-      "location": "Orlando, FL",
+      "degree": "Master of Science in Field",
+      "school": "University Name",
+      "location": "City, State",
       "dates": "08/2023 – 05/2025",
       "details": "GPA: 3.9"
     }
@@ -73,6 +73,8 @@ from docx.oxml import OxmlElement
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify_output import (  # noqa: E402
     build_report,
+    find_config,
+    load_config,
     verify_anonymization,
     verify_page_count,
 )
@@ -344,9 +346,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", "-i", help="Path to resume JSON. If omitted, reads stdin.")
     parser.add_argument("--output", "-o", required=True, help="Output DOCX path.")
     parser.add_argument(
-        "--allow-pwc",
+        "--config",
+        type=Path,
+        default=None,
+        help=(
+            "Path to tailor_config.json. If omitted, walks up from the output "
+            "directory looking for the file."
+        ),
+    )
+    parser.add_argument(
+        "--skip-anonymization",
         action="store_true",
-        help="Skip the anonymization check (use only when the target JD is PwC itself).",
+        help=(
+            "Skip the anonymization check (use when the target JD employer matches "
+            "one of your configured anonymization patterns)."
+        ),
     )
     parser.add_argument(
         "--no-strict-pages",
@@ -367,12 +381,21 @@ def main(argv: list[str] | None = None) -> int:
 
     out = build_resume(data, Path(args.output))
 
-    violations = verify_anonymization(out, allow_pwc=args.allow_pwc)
+    config_path = args.config or find_config([out.parent, Path.cwd()])
+    config = load_config(config_path)
+
+    violations = verify_anonymization(out, config=config, skip=args.skip_anonymization)
     page_count: int | None = None
     if not args.skip_page_check:
         page_count = verify_page_count(out, max_pages=RESUME_MAX_PAGES)
 
-    report = build_report(out, violations, page_count, RESUME_MAX_PAGES if not args.skip_page_check else None)
+    report = build_report(
+        out,
+        violations,
+        page_count,
+        RESUME_MAX_PAGES if not args.skip_page_check else None,
+        config_path,
+    )
     exit_code = 0
 
     if violations:
@@ -385,8 +408,9 @@ def main(argv: list[str] | None = None) -> int:
         for v in violations:
             print(f"  - {v.token!r} matched {v.match!r} near: {v.context!r}", file=sys.stderr)
         print(
-            "\nFix the resume JSON to use anonymized framing per memory/glossary.md, "
-            "then re-run. Pass --allow-pwc only when the target JD is PwC itself.",
+            "\nFix the resume JSON to use anonymized framing per your master_profile.md, "
+            "then re-run. Pass --skip-anonymization only when the target JD employer matches "
+            "one of your configured anonymization patterns.",
             file=sys.stderr,
         )
 
@@ -400,8 +424,9 @@ def main(argv: list[str] | None = None) -> int:
         if not args.no_strict_pages:
             exit_code |= 2
             print(
-                "Trim Wachtell bullets first, then older Cognizant bullets, then shorten the "
-                "longest lines. See references/tailoring_playbook.md → Length decisions.",
+                "Trim per your master_profile.md tailoring rules — usually the lowest-impact "
+                "legacy-employer bullets first, then older current-employer bullets, then "
+                "shorten the longest lines.",
                 file=sys.stderr,
             )
 

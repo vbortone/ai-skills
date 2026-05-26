@@ -3,31 +3,36 @@ Post-render verification for resume-tailor DOCX outputs.
 
 Two compliance checks run after a build script renders a DOCX:
 
-1. **Anonymization** — tokens that identify Vincent's Big-4 client
-   (PwC / PricewaterhouseCoopers / pwc.com) must not appear, per the
-   skill's Anonymization Rule. Inversion: when the target JD is PwC
-   itself, pass --allow-pwc / allow_pwc=True.
-2. **Page count** — `ats_rules.md` caps resumes at 2 pages and
-   `cover_letter_guide.md` caps cover letters at 1 page. Render the
-   DOCX to PDF via docx2pdf (MS Word COM automation), count pages with
-   pypdf, fail loudly if over cap. Override with --no-strict-pages.
+1. **Anonymization** — tokens the user has marked as never-publishable
+   (e.g. an engagement client whose name must be replaced with a generic
+   framing on every output) must not appear in the rendered DOCX.
+   Patterns come from `tailor_config.json` in the user's working folder;
+   if no config is found or the `anonymization` section is empty, this
+   check is skipped with an informational note.
+2. **Page count** — resumes are capped at 2 pages and cover letters at 1
+   page. Render the DOCX to PDF via docx2pdf (MS Word COM automation),
+   count pages with pypdf, fail loudly if over cap. Override with
+   --no-strict-pages.
 
 Library use
 -----------
     from verify_output import (
         verify_anonymization,
         verify_page_count,
-        build_report,
+        load_config,
+        find_config,
     )
 
-    violations = verify_anonymization(Path("Resume.docx"))
+    config = load_config(find_config([Path("Resume.docx").parent]))
+    violations = verify_anonymization(Path("Resume.docx"), config=config)
     page_count = verify_page_count(Path("Resume.docx"), max_pages=2)
 
 CLI use
 -------
     python verify_output.py path/to/Resume.docx --max-pages 2
-    python verify_output.py path/to/Resume.docx --allow-pwc       # JD is PwC
-    python verify_output.py path/to/Resume.docx --no-strict-pages # warn, don't fail
+    python verify_output.py path/to/Resume.docx --config /path/to/tailor_config.json
+    python verify_output.py path/to/Resume.docx --skip-anonymization
+    python verify_output.py path/to/Resume.docx --no-strict-pages
 
 Exit codes
 ----------
@@ -50,11 +55,7 @@ from pathlib import Path
 from docx import Document
 
 
-FORBIDDEN_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("PwC", re.compile(r"\bpwc\b", re.IGNORECASE)),
-    ("pwc.com", re.compile(r"pwc\.com", re.IGNORECASE)),
-    ("PricewaterhouseCoopers", re.compile(r"\bpricewaterhousecoopers\b", re.IGNORECASE)),
-]
+CONFIG_FILENAME = "tailor_config.json"
 
 
 class AnonymizationError(RuntimeError):
@@ -65,6 +66,16 @@ class PageCountError(RuntimeError):
     """Raised when the rendered PDF exceeds the page cap."""
 
 
+class ConfigError(RuntimeError):
+    """Raised when tailor_config.json is malformed."""
+
+
+@dataclass(frozen=True)
+class ForbiddenToken:
+    label: str
+    pattern: re.Pattern[str]
+
+
 @dataclass(frozen=True)
 class Violation:
     token: str
@@ -73,6 +84,61 @@ class Violation:
 
     def as_dict(self) -> dict:
         return {"token": self.token, "match": self.match, "context": self.context}
+
+
+def find_config(search_paths: list[Path]) -> Path | None:
+    """Walk up from each search path looking for `tailor_config.json`.
+
+    Returns the first match found, or None. Each search path is walked
+    independently; the function does not short-circuit between them."""
+    for start in search_paths:
+        current = start.resolve()
+        if current.is_file():
+            current = current.parent
+        while True:
+            candidate = current / CONFIG_FILENAME
+            if candidate.is_file():
+                return candidate
+            if current.parent == current:
+                break
+            current = current.parent
+    return None
+
+
+def load_config(config_path: Path | None) -> dict:
+    """Load and validate a tailor_config.json file. Returns {} when path is None."""
+    if config_path is None:
+        return {}
+    try:
+        text = config_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ConfigError(f"Cannot read {config_path}: {exc}") from exc
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ConfigError(f"{config_path} is not valid JSON: {exc}") from exc
+
+
+def _compile_forbidden_tokens(config: dict) -> list[ForbiddenToken]:
+    anonymization = config.get("anonymization") or {}
+    raw_tokens = anonymization.get("forbidden_tokens") or []
+    compiled: list[ForbiddenToken] = []
+    for entry in raw_tokens:
+        if not isinstance(entry, dict):
+            raise ConfigError(
+                f"anonymization.forbidden_tokens entries must be objects, got {type(entry).__name__}"
+            )
+        label = entry.get("label")
+        pattern = entry.get("pattern")
+        if not label or not pattern:
+            raise ConfigError(
+                "anonymization.forbidden_tokens entries require both 'label' and 'pattern'"
+            )
+        try:
+            compiled.append(ForbiddenToken(label=label, pattern=re.compile(pattern, re.IGNORECASE)))
+        except re.error as exc:
+            raise ConfigError(f"Invalid regex for token {label!r}: {exc}") from exc
+    return compiled
 
 
 def _iter_docx_text(docx_path: Path):
@@ -99,28 +165,37 @@ def _iter_docx_text(docx_path: Path):
                     yield para.text
 
 
-def _find_violations_in_line(line: str) -> list[Violation]:
+def _find_violations_in_line(line: str, tokens: list[ForbiddenToken]) -> list[Violation]:
     out: list[Violation] = []
-    for token, pattern in FORBIDDEN_PATTERNS:
-        for m in pattern.finditer(line):
+    for token in tokens:
+        for m in token.pattern.finditer(line):
             start = max(0, m.start() - 30)
             end = min(len(line), m.end() + 30)
             snippet = line[start:end].strip()
-            out.append(Violation(token=token, match=m.group(0), context=snippet))
+            out.append(Violation(token=token.label, match=m.group(0), context=snippet))
     return out
 
 
-def verify_anonymization(docx_path: Path, allow_pwc: bool = False) -> list[Violation]:
+def verify_anonymization(
+    docx_path: Path,
+    config: dict | None = None,
+    skip: bool = False,
+) -> list[Violation]:
     """Return the list of violations found in the DOCX. Empty list = clean.
 
-    If allow_pwc is True, returns an empty list without scanning — the
-    target employer is PwC and naming it is correct."""
-    if allow_pwc:
+    If skip is True, returns an empty list without scanning — the target
+    JD is one of the configured exception employers and naming it is
+    correct."""
+    if skip:
+        return []
+
+    tokens = _compile_forbidden_tokens(config or {})
+    if not tokens:
         return []
 
     violations: list[Violation] = []
     for line in _iter_docx_text(docx_path):
-        violations.extend(_find_violations_in_line(line))
+        violations.extend(_find_violations_in_line(line, tokens))
     return violations
 
 
@@ -164,12 +239,14 @@ def build_report(
     violations: list[Violation],
     page_count: int | None,
     max_pages: int | None,
+    config_path: Path | None,
 ) -> dict:
     page_over_cap = (
         page_count is not None and max_pages is not None and page_count > max_pages
     )
     return {
         "docx_path": str(docx_path),
+        "config_path": str(config_path) if config_path else None,
         "anonymization_violations": [v.as_dict() for v in violations],
         "page_count": page_count,
         "max_pages": max_pages,
@@ -182,9 +259,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     parser.add_argument("docx", help="Path to the rendered DOCX to verify.")
     parser.add_argument(
-        "--allow-pwc",
+        "--config",
+        type=Path,
+        default=None,
+        help=(
+            "Path to tailor_config.json. If omitted, the verifier walks up from "
+            "the DOCX's parent directory looking for the file."
+        ),
+    )
+    parser.add_argument(
+        "--skip-anonymization",
         action="store_true",
-        help="Skip the anonymization check (use when the target JD is PwC itself).",
+        help=(
+            "Skip the anonymization check (use when the target JD employer matches "
+            "one of your configured anonymization patterns and naming them is correct)."
+        ),
     )
     parser.add_argument(
         "--max-pages",
@@ -204,13 +293,26 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {docx_path} does not exist or is not a file.", file=sys.stderr)
         return 4
 
-    violations = verify_anonymization(docx_path, allow_pwc=args.allow_pwc)
+    config_path = args.config or find_config([docx_path.parent, Path.cwd()])
+    config = load_config(config_path)
+
+    if not args.skip_anonymization and not (config.get("anonymization") or {}).get(
+        "forbidden_tokens"
+    ):
+        print(
+            f"INFO: no anonymization patterns found "
+            f"({'config absent' if config_path is None else f'config at {config_path}'}); "
+            "anonymization check skipped.",
+            file=sys.stderr,
+        )
+
+    violations = verify_anonymization(docx_path, config=config, skip=args.skip_anonymization)
 
     page_count: int | None = None
     if args.max_pages is not None:
         page_count = verify_page_count(docx_path, max_pages=args.max_pages)
 
-    report = build_report(docx_path, violations, page_count, args.max_pages)
+    report = build_report(docx_path, violations, page_count, args.max_pages, config_path)
     print(json.dumps(report, indent=2))
 
     exit_code = 0
@@ -224,7 +326,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  - {v.token!r} matched {v.match!r} near: {v.context!r}", file=sys.stderr)
         print(
             "\nFix the source content (resume JSON, cover letter JSON, or recruiter pitch) "
-            "to use anonymized framing per memory/glossary.md.",
+            "to use anonymized framing per your master_profile.md.",
             file=sys.stderr,
         )
 

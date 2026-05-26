@@ -11,12 +11,12 @@ Or pipe JSON via stdin:
 JSON schema
 -----------
 {
-  "name": "Vincent Bortone",
+  "name": "Jane Doe",
   "contact": {
-    "address": "8349 NW 7th Pl, Plantation, FL 33317",
-    "phone": "561-343-0765",
-    "email": "vbortone@gmail.com",
-    "linkedin": "linkedin.com/in/vincentbortone"
+    "address": "Street Address, City, State Zip",
+    "phone": "555-555-5555",
+    "email": "jane@example.com",
+    "linkedin": "linkedin.com/in/janedoe"
   },
   "date": "May 6, 2026",
   "recipient": {
@@ -50,6 +50,8 @@ from docx.oxml import OxmlElement
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify_output import (  # noqa: E402
     build_report,
+    find_config,
+    load_config,
     verify_anonymization,
     verify_page_count,
 )
@@ -181,9 +183,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", "-i", help="Path to JSON. If omitted, reads stdin.")
     parser.add_argument("--output", "-o", required=True, help="Output DOCX path.")
     parser.add_argument(
-        "--allow-pwc",
+        "--config",
+        type=Path,
+        default=None,
+        help=(
+            "Path to tailor_config.json. If omitted, walks up from the output "
+            "directory looking for the file."
+        ),
+    )
+    parser.add_argument(
+        "--skip-anonymization",
         action="store_true",
-        help="Skip the anonymization check (use only when the target JD is PwC itself).",
+        help=(
+            "Skip the anonymization check (use when the target JD employer matches "
+            "one of your configured anonymization patterns)."
+        ),
     )
     parser.add_argument(
         "--no-strict-pages",
@@ -204,7 +218,10 @@ def main(argv: list[str] | None = None) -> int:
 
     out = build_cover_letter(data, Path(args.output))
 
-    violations = verify_anonymization(out, allow_pwc=args.allow_pwc)
+    config_path = args.config or find_config([out.parent, Path.cwd()])
+    config = load_config(config_path)
+
+    violations = verify_anonymization(out, config=config, skip=args.skip_anonymization)
     page_count: int | None = None
     if not args.skip_page_check:
         page_count = verify_page_count(out, max_pages=COVER_LETTER_MAX_PAGES)
@@ -214,6 +231,7 @@ def main(argv: list[str] | None = None) -> int:
         violations,
         page_count,
         COVER_LETTER_MAX_PAGES if not args.skip_page_check else None,
+        config_path,
     )
     exit_code = 0
 
@@ -227,8 +245,9 @@ def main(argv: list[str] | None = None) -> int:
         for v in violations:
             print(f"  - {v.token!r} matched {v.match!r} near: {v.context!r}", file=sys.stderr)
         print(
-            "\nFix the cover letter JSON to use anonymized framing per memory/glossary.md, "
-            "then re-run. Pass --allow-pwc only when the target JD is PwC itself.",
+            "\nFix the cover letter JSON to use anonymized framing per your master_profile.md, "
+            "then re-run. Pass --skip-anonymization only when the target JD employer matches "
+            "one of your configured anonymization patterns.",
             file=sys.stderr,
         )
 
