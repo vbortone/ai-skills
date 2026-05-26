@@ -41,6 +41,7 @@ Use the auto-loaded project context throughout tailoring — it's how outputs so
 - **Recruiter threads** — if the user is tracking recruiter conversations, cross-reference the JD's company against known threads and surface relevant anchors (comp range, last contact, role-fit signals) in the tailoring notes.
 - **Open tasks / Someday items** — if the user maintains a tasks list, surface matches between the JD and any "someday" items the JD's domain could advance.
 - **Prior outcomes** — if the user archives past applications with outcome notes, check whether the current JD's company is one the user has applied to before, and quote relevant lessons from those outcomes in the tailoring notes.
+- **Comp targets** — if the user documents target compensation ranges by role tier (typically in `master_profile.md` → Tailoring Rules, `CLAUDE.md`, or a working-folder memory file), the comp-posture check in Step 1 uses them. If you can't find any documented target, ask the user before proceeding when the JD discloses comp.
 
 If you expected context that's not there — for example the user mentioned a recruiter thread but no recruiter file is loaded — ask the user before proceeding to make sure they're in the right working folder.
 
@@ -54,10 +55,23 @@ If `application-tracker` isn't loaded, use whatever's already in Claude Code's s
 
 ### Step 1 - Confirm the JD
 
-If the user pasted JD text, use it directly. If they gave a URL:
-1. Fetch the URL.
-2. If fetch fails (paywalled, login-required like LinkedIn job pages, JS-rendered) tell the user clearly and ask them to paste the JD text. Do not invent or summarize from a stub.
-3. Once you have the JD, confirm with the user: *"I see this is for {Position} at {Company}. Want me to proceed?"* - proceed unless they correct.
+If the user pasted JD text, use it directly. If they gave a URL, fetch it through the following tiers in order — drop to the next tier only when the previous one fails or doesn't apply:
+
+1. **Job-search MCP connectors first.** When the URL's domain matches a connected job-board MCP (LinkedIn, ZipRecruiter, Dice, Indeed, or any platform exposing `search_jobs` / `get_job_details` tools), use the connector. Structured JD data — title, location, comp, requirements — beats raw HTML scraping every time, and the comp field is what Step 0's comp-posture check reads.
+2. **WebFetch second.** Plain HTTP fetch with readability extraction. Works for most company-careers pages and bare JD pastes-as-URL.
+3. **Claude in Chrome third.** When WebFetch returns paywalled / login-required / JS-rendered content, try `mcp__Claude_in_Chrome__navigate` + `mcp__Claude_in_Chrome__get_page_text`. LinkedIn jobs pages, in particular, are reliably blocked by WebFetch but reachable through Chrome.
+4. **Ask the user to paste fourth.** Only when tiers 1-3 all fail or don't apply. Tell the user which tier failed and why; never invent or summarize from a stub.
+
+Once you have the JD, confirm with the user: *"I see this is for {Position} at {Company}. Want me to proceed?"* — proceed unless they correct.
+
+**Comp-posture check (when the JD discloses comp).** If the JD includes a salary range, total comp, or equity disclosure, compare against the user's documented comp targets (loaded in Step 0). Categorize the JD's range as **above target**, **at target**, **below target**, or **not disclosed**, and surface the finding BEFORE proceeding to tailor:
+
+- If **below target**: tell the user explicitly and give them a chance to abort cheaply. For example: *"The JD discloses $X-$Y. Your documented target for this tier is $Z — below target. Want to proceed and tailor anyway, or pass?"* Do not generate the full package without that confirmation.
+- If **at** or **above target**: note it and proceed.
+- If **not disclosed**: note that too and proceed; the package can still get written without disclosure.
+- If no comp targets are documented anywhere in the working folder, ask the user before proceeding — they may not have one and that's fine, but the answer should be explicit, not guessed.
+
+Record the comp-posture finding at the top of `tailoring_notes.md` regardless of which branch fired — it's the single most decision-relevant fact about the application.
 
 Extract from the JD:
 - Company name (sanitize for filenames)
@@ -116,8 +130,10 @@ Create a per-application subfolder so the working folder stays organized:
 ├── {Company}_{Position}_{YYYY-MM-DD}_CoverLetter.docx
 ├── recruiter_pitch.md
 ├── job_description.txt          (verbatim JD captured at apply-time - JDs vanish from the web)
-└── tailoring_notes.md           (what was emphasized, what was de-emphasized, flags raised)
+└── tailoring_notes.md           (what was emphasized, what was de-emphasized, flags raised — see `references/tailoring_notes_template.md`)
 ```
+
+**Write `tailoring_notes.md` per the structure in `references/tailoring_notes_template.md`.** Section order is load-bearing — comp posture first, project context second (prior outcomes / recruiter / Someday matches from application-tracker), then role-at-a-glance, tailoring choices, and finally an "honest read" recommendation. Omit sections that have no content for the run, but don't reorder.
 
 **Filename sanitization:**
 - Replace spaces with underscores
@@ -143,7 +159,7 @@ End the response with:
 - **Anonymize per the user's rules.** Every resume / cover letter / recruiter pitch must respect the Anonymization Rule documented in the user's `master_profile.md` and enforced by `tailor_config.json`. The post-render verifier hard-fails the build if any forbidden token appears in the output. Inversion: if the JD employer matches one of the anonymized employers, pass `--skip-anonymization` to the build scripts.
 - **Single source of truth.** All facts come from `master_profile.md`. Do not pull facts from training memory of "what's on a typical Director resume."
 - **Respect every Flag.** The "Flags & Items to Confirm Before Use" section of `master_profile.md` lists items that must NOT appear on a resume or require specific framing. Re-read this section before generating each output.
-- **Keep originals.** Do not modify `master_profile.md` outside the freshness-refresh flow, and never overwrite a previous Application folder for the same company+position+date - increment the date or add `_v2`.
+- **Keep originals.** Do not modify `master_profile.md` outside the freshness-refresh flow, and never overwrite a previous Application folder. For a same-day iteration, suffix the new folder with `_v2`, `_v3`, etc.; for a re-application on a later date, use today's date in the folder name (it won't collide). See the re-application edge case below for the cross-date cases.
 - **ATS-safe.** No tables-for-layout, no text boxes, no headers/footers, no images. **Use plain hyphens (`-`) only - never use Unicode dashes like en-dash (U+2013) or em-dash (U+2014) - some ATS parsers render them as garbage.** See `references/ats_rules.md` for the full list. Build scripts auto-normalize both Unicode dashes defensively.
 - **Hard cap 2 pages on resumes.** Never spill to page 3. If long, trim per the user's "Tailoring Rules" in `master_profile.md`. See "Length decisions" in `references/tailoring_playbook.md`.
 - **Hard cap 1 page on cover letters.** 2-3 paragraphs, ~250-300 words. Use 2 when hook + experience fuse cleanly; 3 when there's a real differentiator or gap to address. See `references/cover_letter_guide.md`.
@@ -160,6 +176,7 @@ Read these as needed during a run; they're not always required:
 - `references/tailoring_playbook.md` - How to map JD requirements to bullets. Read during tailoring.
 - `references/cover_letter_guide.md` - Cover letter structure. Read when generating cover letter.
 - `references/recruiter_pitch_guide.md` - Recruiter pitch format. Read when generating pitch.
+- `references/tailoring_notes_template.md` - Structure for `tailoring_notes.md`. Read in Step 6 before writing the notes.
 - `scripts/build_resume_docx.py` - DOCX generator. Pass tailored content as JSON via stdin.
 - `scripts/build_cover_letter_docx.py` - Cover letter DOCX generator.
 - `scripts/verify_output.py` - Post-render anonymization + page-count verifier. Invoked automatically by the build scripts.
@@ -178,10 +195,13 @@ When the user adds new experience or wants to update facts, refresh the profile 
 
 ## Edge cases
 
-- **JD URL is LinkedIn jobs page** - almost always blocked. Ask user to paste.
+- **JD URL is LinkedIn jobs page** - WebFetch is reliably blocked. Try Claude in Chrome MCP (`mcp__Claude_in_Chrome__navigate` + `get_page_text`) before asking the user to paste. See Step 1 fetch order.
 - **JD is a screenshot** - read the image, transcribe, confirm transcription with user.
 - **Multi-role JD ("we're hiring for several positions")** - ask which position to target before proceeding.
 - **JD demands certifications the user doesn't have** - list adjacent ones; flag in tailoring notes.
-- **Re-applying to the same company+position** - name file with `_v2` suffix and reference prior tailoring notes.
+- **Re-applying to the same company (any role, any date).** Step 0's `find_prior_applications.py` fuzzy-matches the company name across both `Applications/` and `Archive/Applications/` regardless of role or date. Surface every prior application in `tailoring_notes.md` → "Prior outcomes" (quote each `_outcome.md` excerpt verbatim) so the new tailoring round can learn from what happened last time. Three sub-cases:
+  - **Same company + same role + same date** (within-day iteration): suffix the new folder name with `_v2`, `_v3`, etc.
+  - **Same company + same role + different date** (re-application after gap): use today's date in the folder name; do not collide with the prior folder.
+  - **Same company + different role**: same as above — today's date, no collision. The prior application's lessons may still apply (e.g. recruiter pipeline, internal feedback patterns), so quote them in the notes even though the role is different.
 - **Working folder not selected** - fall back to outputs folder, but warn the user the deliverables won't be saved with the rest of their application history. Better to ask the user to select / mount their working folder first.
 - **No `master_profile.md` in working folder** - offer to bootstrap from `examples/working-folder/master_profile.md.example`. Do not generate outputs against a stub profile.
