@@ -6,7 +6,7 @@ Most cover letters are throw-away. The ones that get read are short, specific, a
 
 **Hard cap: 1 page. 2-3 paragraphs total. ~200-250 words is the sweet spot; never exceed 280.** Letterhead + date + recipient block + salutation + signoff + name eat ~3 inches of vertical space before any body text starts, so body content gets less than half a page. If a paragraph is running long, cut a sentence rather than spilling onto a second page. Anonymize the client per the master profile's Anonymization Rule (PwC -> "Big 4 Accounting Firm" / "the client").
 
-**Verification:** the build script renders the cover letter to PDF; if the rendered PDF is more than 1 page, trim the longest paragraph by one sentence and regenerate. Don't ship a cover letter where the signature spills onto page 2.
+**Verification:** `scripts/build_cover_letter_docx.py` renders the cover letter to PDF via `scripts/verify_output.py` and fails (exit code 2) if the rendered PDF is more than 1 page — trim the longest paragraph by one sentence and regenerate. Don't ship a cover letter where the signature spills onto page 2.
 
 Use **2 paragraphs** when:
 - The hook and experience can be tightly fused (e.g., the JD asks for one specific thing Vincent obviously has).

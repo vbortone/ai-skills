@@ -6,7 +6,7 @@ The `build_resume_docx.py` script bakes most of these rules in. This document ex
 
 ## Hard rules (never break)
 
-0. **2 pages maximum.** Never spill to page 3. ATS parsers handle 2-page resumes fine; recruiters at director-and-above seniority expect 1-2 pages. A 3rd page reads as undisciplined regardless of content. If the resume overflows, cut bullets per the trim order in `tailoring_playbook.md` "Length decisions".
+0. **2 pages maximum.** Never spill to page 3. ATS parsers handle 2-page resumes fine; recruiters at director-and-above seniority expect 1-2 pages. A 3rd page reads as undisciplined regardless of content. If the resume overflows, cut bullets per the trim order in `tailoring_playbook.md` "Length decisions". Enforced post-render by `scripts/verify_output.py` (renders to PDF, counts pages, fails the build at page_count > 2).
 1. **Single column.** Do not use side-by-side layout, even with tables. Multi-column resumes cause text-order scrambling in roughly half of ATS engines.
 2. **No text boxes.** Many ATS parsers ignore text-box content entirely.
 3. **No images.** This includes logos, headshots, and icon bullets. ATS cannot read them and they bloat file size.

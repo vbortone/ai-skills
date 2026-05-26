@@ -105,6 +105,9 @@ If `Applications/` doesn't exist yet, create it.
 End the response with:
 - A `computer://` link to the per-application subfolder
 - A 2-sentence summary of what was tailored (headline chosen, top 3 emphasized themes)
+- Confirmation that post-render compliance checks passed. The build scripts automatically run two checks (see `scripts/verify_output.py`) and emit a JSON report on stdout:
+  - **Anonymization** — fails (exit code 1) if `PwC`, `pwc.com`, or `PricewaterhouseCoopers` appear in the rendered DOCX. If the target JD is PwC itself, pass `--allow-pwc` to the build scripts to skip this check and note it in the report.
+  - **Page count** — renders the DOCX to PDF via docx2pdf (requires MS Word) and fails (exit code 2) if the resume exceeds 2 pages or the cover letter exceeds 1 page. Pass `--no-strict-pages` to downgrade to a warning, or `--skip-page-check` when Word isn't available.
 - Any flags raised (e.g., "JD asks for 5+ years of GCP - your profile shows Azure depth, not GCP. I led with Azure cloud-architecture experience and noted multi-cloud transferability rather than claim GCP.")
 
 ## Critical rules

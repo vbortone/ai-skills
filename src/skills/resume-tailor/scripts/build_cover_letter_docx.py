@@ -47,6 +47,16 @@ from docx.shared import Pt, Inches
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from verify_output import (  # noqa: E402
+    build_report,
+    verify_anonymization,
+    verify_page_count,
+)
+
+
+COVER_LETTER_MAX_PAGES = 1
+
 
 BODY_FONT = "Calibri"
 BODY_SIZE = Pt(11)
@@ -170,6 +180,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     parser.add_argument("--input", "-i", help="Path to JSON. If omitted, reads stdin.")
     parser.add_argument("--output", "-o", required=True, help="Output DOCX path.")
+    parser.add_argument(
+        "--allow-pwc",
+        action="store_true",
+        help="Skip the anonymization check (use only when the target JD is PwC itself).",
+    )
+    parser.add_argument(
+        "--no-strict-pages",
+        action="store_true",
+        help="Warn but don't fail on page-count overage. Default cap is 1 page.",
+    )
+    parser.add_argument(
+        "--skip-page-check",
+        action="store_true",
+        help="Skip the page-count check entirely (e.g. when MS Word isn't available).",
+    )
     args = parser.parse_args(argv)
 
     if args.input:
@@ -178,8 +203,51 @@ def main(argv: list[str] | None = None) -> int:
         data = json.loads(sys.stdin.read())
 
     out = build_cover_letter(data, Path(args.output))
-    print(str(out))
-    return 0
+
+    violations = verify_anonymization(out, allow_pwc=args.allow_pwc)
+    page_count: int | None = None
+    if not args.skip_page_check:
+        page_count = verify_page_count(out, max_pages=COVER_LETTER_MAX_PAGES)
+
+    report = build_report(
+        out,
+        violations,
+        page_count,
+        COVER_LETTER_MAX_PAGES if not args.skip_page_check else None,
+    )
+    exit_code = 0
+
+    if violations:
+        exit_code |= 1
+        print(
+            f"\nERROR: rendered cover letter {out.name} contains "
+            f"{len(violations)} anonymization violation(s):",
+            file=sys.stderr,
+        )
+        for v in violations:
+            print(f"  - {v.token!r} matched {v.match!r} near: {v.context!r}", file=sys.stderr)
+        print(
+            "\nFix the cover letter JSON to use anonymized framing per memory/glossary.md, "
+            "then re-run. Pass --allow-pwc only when the target JD is PwC itself.",
+            file=sys.stderr,
+        )
+
+    if report["page_over_cap"]:
+        level = "WARN" if args.no_strict_pages else "ERROR"
+        print(
+            f"\n{level}: rendered cover letter {out.name} is {page_count} pages "
+            f"(cap is {COVER_LETTER_MAX_PAGES}).",
+            file=sys.stderr,
+        )
+        if not args.no_strict_pages:
+            exit_code |= 2
+            print(
+                "Tighten to 2-3 paragraphs / ~250-300 words. See references/cover_letter_guide.md.",
+                file=sys.stderr,
+            )
+
+    print(json.dumps(report))
+    return exit_code
 
 
 if __name__ == "__main__":
