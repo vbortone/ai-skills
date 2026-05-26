@@ -54,10 +54,14 @@ If `application-tracker` isn't loaded, use whatever's already in Claude Code's s
 
 ### Step 1 - Confirm the JD
 
-If the user pasted JD text, use it directly. If they gave a URL:
-1. Fetch the URL.
-2. If fetch fails (paywalled, login-required like LinkedIn job pages, JS-rendered) tell the user clearly and ask them to paste the JD text. Do not invent or summarize from a stub.
-3. Once you have the JD, confirm with the user: *"I see this is for {Position} at {Company}. Want me to proceed?"* - proceed unless they correct.
+If the user pasted JD text, use it directly. If they gave a URL, fetch it through the following tiers in order — drop to the next tier only when the previous one fails or doesn't apply:
+
+1. **Job-search MCP connectors first.** When the URL's domain matches a connected job-board MCP (LinkedIn, ZipRecruiter, Dice, Indeed, or any platform exposing `search_jobs` / `get_job_details` tools), use the connector. Structured JD data — title, location, comp, requirements — beats raw HTML scraping every time, and the comp field is what Step 0's comp-posture check reads.
+2. **WebFetch second.** Plain HTTP fetch with readability extraction. Works for most company-careers pages and bare JD pastes-as-URL.
+3. **Claude in Chrome third.** When WebFetch returns paywalled / login-required / JS-rendered content, try `mcp__Claude_in_Chrome__navigate` + `mcp__Claude_in_Chrome__get_page_text`. LinkedIn jobs pages, in particular, are reliably blocked by WebFetch but reachable through Chrome.
+4. **Ask the user to paste fourth.** Only when tiers 1-3 all fail or don't apply. Tell the user which tier failed and why; never invent or summarize from a stub.
+
+Once you have the JD, confirm with the user: *"I see this is for {Position} at {Company}. Want me to proceed?"* — proceed unless they correct.
 
 Extract from the JD:
 - Company name (sanitize for filenames)
@@ -178,7 +182,7 @@ When the user adds new experience or wants to update facts, refresh the profile 
 
 ## Edge cases
 
-- **JD URL is LinkedIn jobs page** - almost always blocked. Ask user to paste.
+- **JD URL is LinkedIn jobs page** - WebFetch is reliably blocked. Try Claude in Chrome MCP (`mcp__Claude_in_Chrome__navigate` + `get_page_text`) before asking the user to paste. See Step 1 fetch order.
 - **JD is a screenshot** - read the image, transcribe, confirm transcription with user.
 - **Multi-role JD ("we're hiring for several positions")** - ask which position to target before proceeding.
 - **JD demands certifications the user doesn't have** - list adjacent ones; flag in tailoring notes.
