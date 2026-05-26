@@ -30,10 +30,10 @@ Recruiter pitches lean confident - but specific, not boastful. The line between 
 ## Examples (templates, not deliverables)
 
 ### Template - Phone screen variant
-> I'm currently a System Architect on Cognizant's Managed Services portfolio supporting PwC's US Assurance technology - I've been there since 2018, and before that I spent nearly two decades at Wachtell, Lipton, Rosen & Katz as their Manager of Application Architecture. Across both engagements I've led modernization programs that shipped real numbers - 40% performance gains, 35% defect reductions, and seven-figure cost-out wins. The {role} caught my attention because {hook tied to JD's priority}, which is exactly the kind of work I led when I {Vincent's matching achievement}. I'm looking for a role where {forward-looking interest pulled from preferences}.
+> I'm currently a System Architect on Cognizant's Managed Services portfolio supporting a Big 4 professional services client's assurance technology - I've been there since 2018, and before that I spent nearly two decades at a top-tier law firm as their Manager of Application Architecture. Across both engagements I've led modernization programs that shipped real numbers - 40% performance gains, 35% defect reductions, and seven-figure cost-out wins. The {role} caught my attention because {hook tied to JD's priority}, which is exactly the kind of work I led when I {Vincent's matching achievement}. I'm looking for a role where {forward-looking interest pulled from preferences}.
 
 ### Template - LinkedIn DM variant
-> Came across the {role} at {company}. I've been architecting AI-assisted engineering and cloud-native programs for PwC's US Assurance team since 2018, including {specific anchor that matches their JD}. Open to a 15-minute call if there's mutual interest?
+> Came across the {role} at {company}. I've been architecting AI-assisted engineering and cloud-native programs for a Big 4 Accounting Firm's assurance team since 2018, including {specific anchor that matches their JD}. Open to a 15-minute call if there's mutual interest?
 
 ## What to leave out
 
