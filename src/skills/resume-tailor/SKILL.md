@@ -30,6 +30,22 @@ If the working folder doesn't contain `master_profile.md`, walk the user through
 
 Follow these steps in order. Do not skip the freshness check.
 
+### Step 0 - Load project context
+
+Before generating anything, confirm the user's working-folder context is loaded. Claude Code's auto-memory conventions (`CLAUDE.md` for working memory, `memory/` for persistent memory) are loaded automatically at session start; the skill's own contract files (`master_profile.md`, `tailor_config.json`) are read in subsequent steps.
+
+Use the auto-loaded project context throughout tailoring — it's how outputs sound like the user's voice instead of a generic template:
+
+- **Vocabulary** — if `CLAUDE.md` or `memory/` contains program names, recurring internal terms, or domain jargon the user uses, reflect them in cover-letter prose. Don't translate them into generic language.
+- **Active applications** — if the user is tracking active applications, surface relevant ones in `tailoring_notes.md` (e.g. re-applications to the same company, applications with the same recruiter).
+- **Recruiter threads** — if the user is tracking recruiter conversations, cross-reference the JD's company against known threads and surface relevant anchors (comp range, last contact, role-fit signals) in the tailoring notes.
+- **Open tasks / Someday items** — if the user maintains a tasks list, surface matches between the JD and any "someday" items the JD's domain could advance.
+- **Prior outcomes** — if the user archives past applications with outcome notes, check whether the current JD's company is one the user has applied to before, and quote relevant lessons from those outcomes in the tailoring notes.
+
+If you expected context that's not there — for example the user mentioned a recruiter thread but no recruiter file is loaded — ask the user before proceeding to make sure they're in the right working folder.
+
+The cross-references for active applications, recruiter threads, open tasks, and prior outcomes are owned by the sibling **`application-tracker`** skill when present. If it isn't loaded, use whatever's already in Claude Code's session context from `CLAUDE.md` / `memory/`.
+
 ### Step 1 - Confirm the JD
 
 If the user pasted JD text, use it directly. If they gave a URL:
@@ -48,14 +64,14 @@ Extract from the JD:
 
 ### Step 2 - Master profile freshness check
 
-The skill reads `master_profile.md` from the working folder, last refreshed on the date recorded in its frontmatter. If the user maintains source materials (raw experience exports, performance reviews, project notes) in a `Source/` subfolder, the freshness helper checks them.
+The skill reads `master_profile.md` from the working folder, last refreshed on the date recorded in its frontmatter. The freshness helper (`scripts/refresh_profile.py`) walks the working folder and reports any context-bearing file (`.md`, `.txt`, `.json`, `.yaml`, `.docx`) with an mtime newer than `last_refreshed`. By default it skips generated content (`Applications/`, `Archive/`) and tooling directories (`.git/`, `.venv/`, `node_modules/`, `__pycache__/`, dotfiles).
 
-Run the freshness check (see `scripts/refresh_profile.py`). If any source file has an mtime newer than the master profile's `last_refreshed` timestamp:
-1. Tell the user: *"Your source materials have been updated since I last refreshed the master profile. Want me to refresh before tailoring?"*
-2. If yes - re-read the changed sources, propose updates to `master_profile.md`, get user approval, then update both the file and its `last_refreshed` field, then proceed.
-3. If no - proceed with the existing profile but note the staleness in the tailoring notes file.
+Run the freshness check. If any file is reported newer than `last_refreshed`:
+1. Tell the user: *"Your working folder has been updated since I last refreshed the master profile (N files newer). Want me to refresh before tailoring?"*
+2. If yes — re-read the changed files, propose updates to `master_profile.md`, get user approval, then update both the file and its `last_refreshed` field, then proceed.
+3. If no — proceed with the existing profile but note the staleness in the tailoring notes file.
 
-If the working folder has no `Source/` subfolder, skip the check silently and proceed.
+If `last_refreshed` is missing from the frontmatter, treat the profile as stale and offer to set it after the user reviews.
 
 ### Step 3 - Tailor
 

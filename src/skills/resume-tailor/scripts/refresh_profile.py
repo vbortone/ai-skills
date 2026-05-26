@@ -1,32 +1,64 @@
 """
-Check whether the master_profile.md is stale relative to the user's
-Source folder. Stale = at least one source file has an mtime newer than
-the profile's last_refreshed date.
+Check whether the master_profile.md is stale relative to other context
+files in the user's working folder.
+
+The skill treats master_profile.md as the canonical source of the user's
+career data. Other files in the working folder (CLAUDE.md, memory/,
+recruiter notes, project context, source exports) may carry updates the
+profile hasn't absorbed yet. This helper walks the working folder and
+reports any context-bearing file with an mtime newer than the profile's
+`last_refreshed` frontmatter date.
 
 Usage
 -----
     python refresh_profile.py \\
-        --source-dir "/path/to/Source" \\
         --profile-path "/path/to/master_profile.md"
 
-Outputs JSON to stdout describing the freshness state and any newer files,
-e.g.:
-    {
-      "stale": true,
-      "last_refreshed": "2026-05-06",
-      "newer_files": [
-        {"path": "...", "mtime": "2026-05-08T14:23:11", "delta_days": 2}
-      ]
-    }
+    # By default, the working folder is the directory containing the
+    # profile. Override with --working-folder.
+    python refresh_profile.py \\
+        --profile-path "/path/to/master_profile.md" \\
+        --working-folder "/path/to/some-other-root"
+
+    # Add directories the walker should also inspect (e.g. a network
+    # share where source files live), and patterns to ignore.
+    python refresh_profile.py \\
+        --profile-path "/path/to/master_profile.md" \\
+        --watch "/external/Source" \\
+        --ignore "Drafts" --ignore "Old"
+
+Outputs JSON to stdout describing the freshness state and any newer files.
 """
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import sys
 from datetime import datetime
 from pathlib import Path
+
+
+CONTEXT_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".docx"}
+
+DEFAULT_IGNORE_NAMES = {
+    "Applications",
+    "Archive",
+    ".git",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "__pycache__",
+    ".cache",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".idea",
+    ".vscode",
+    ".DS_Store",
+}
 
 
 def parse_last_refreshed(profile_path: Path) -> datetime | None:
@@ -39,7 +71,6 @@ def parse_last_refreshed(profile_path: Path) -> datetime | None:
     if not text.startswith("---"):
         return None
 
-    # Slice to the second '---'
     end = text.find("---", 3)
     if end == -1:
         return None
@@ -54,18 +85,55 @@ def parse_last_refreshed(profile_path: Path) -> datetime | None:
         return None
 
 
-def newer_files(source_dir: Path, threshold: datetime) -> list[dict]:
-    """Return source files with mtime > threshold."""
+def _should_skip(path: Path, ignores: set[str]) -> bool:
+    name = path.name
+    if name in ignores:
+        return True
+    if name.startswith("."):
+        return True
+    for pattern in ignores:
+        if "*" in pattern or "?" in pattern:
+            if fnmatch.fnmatch(name, pattern):
+                return True
+    return False
+
+
+def walk_for_newer(
+    roots: list[Path],
+    threshold: datetime,
+    profile_path: Path,
+    ignores: set[str],
+) -> list[dict]:
+    """Walk each root recursively, returning context files with mtime > threshold.
+
+    Skips the profile itself (it's the threshold reference), files in
+    ignored directories, dotfiles, and files without a known context
+    suffix."""
+    seen: set[Path] = set()
     out: list[dict] = []
-    if not source_dir.exists():
-        return out
-    for entry in source_dir.iterdir():
-        if entry.is_file():
-            mtime = datetime.fromtimestamp(entry.stat().st_mtime)
+    profile_resolved = profile_path.resolve()
+
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            resolved = path.resolve()
+            if resolved == profile_resolved:
+                continue
+            if resolved in seen:
+                continue
+            if any(_should_skip(part_path, ignores) for part_path in path.parents if part_path != root.parent):
+                continue
+            if path.suffix.lower() not in CONTEXT_SUFFIXES:
+                continue
+            seen.add(resolved)
+            mtime = datetime.fromtimestamp(path.stat().st_mtime)
             if mtime > threshold:
                 out.append({
-                    "path": str(entry),
-                    "name": entry.name,
+                    "path": str(path),
+                    "name": path.name,
                     "mtime": mtime.isoformat(timespec="seconds"),
                     "delta_days": (mtime - threshold).days,
                 })
@@ -75,28 +143,59 @@ def newer_files(source_dir: Path, threshold: datetime) -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
-    parser.add_argument("--source-dir", required=True, help="Path to user's Source folder.")
-    parser.add_argument("--profile-path", required=True, help="Path to master_profile.md.")
+    parser.add_argument(
+        "--profile-path",
+        required=True,
+        help="Path to master_profile.md.",
+    )
+    parser.add_argument(
+        "--working-folder",
+        default=None,
+        help="Working folder to walk recursively. Defaults to the directory containing the profile.",
+    )
+    parser.add_argument(
+        "--watch",
+        action="append",
+        default=[],
+        help="Additional path to inspect (file or directory). Can be repeated.",
+    )
+    parser.add_argument(
+        "--ignore",
+        action="append",
+        default=[],
+        help="Additional directory/file name (or glob) to skip. Can be repeated.",
+    )
     args = parser.parse_args(argv)
 
     profile_path = Path(args.profile_path)
-    source_dir = Path(args.source_dir)
+    working_folder = Path(args.working_folder) if args.working_folder else profile_path.parent
+
+    ignores = set(DEFAULT_IGNORE_NAMES) | set(args.ignore)
+    roots: list[Path] = [working_folder]
+    for extra in args.watch:
+        roots.append(Path(extra))
 
     last = parse_last_refreshed(profile_path)
     result: dict = {
-        "stale": False,
+        "profile_path": str(profile_path),
+        "working_folder": str(working_folder),
+        "watched_paths": [str(r) for r in roots],
+        "ignored_names": sorted(ignores),
         "last_refreshed": last.date().isoformat() if last else None,
+        "stale": False,
         "newer_files": [],
         "warnings": [],
     }
 
     if last is None:
-        result["warnings"].append("Could not parse last_refreshed from master profile frontmatter.")
+        result["warnings"].append(
+            "Could not parse `last_refreshed` from master profile frontmatter — treating as stale."
+        )
         result["stale"] = True
-    elif not source_dir.exists():
-        result["warnings"].append(f"Source directory does not exist: {source_dir}")
+    elif not working_folder.exists():
+        result["warnings"].append(f"Working folder does not exist: {working_folder}")
     else:
-        newer = newer_files(source_dir, last)
+        newer = walk_for_newer(roots, last, profile_path, ignores)
         if newer:
             result["stale"] = True
             result["newer_files"] = newer
