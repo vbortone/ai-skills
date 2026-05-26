@@ -59,12 +59,17 @@ Group skills semantically, not chronologically. The tailor reorders groups so JD
 
 ## Tailoring Rules
 
-> Your personal tactical rules. The skill reads these at tailoring time and applies them. This is where you encode "always include X", "default-off Y", "lead with Z for FinTech roles" — anything specific to your career.
+> Your personal tactical policy. The skill reads these at tailoring time and applies them. Without this section the skill will pause and ask you on every content decision — fill it in so the skill can act without interrupting. This is where you encode "always include X", "default-off Y", "lead with Z for FinTech roles" — anything specific to your career.
 
-- **Default work-history scope:** which employers always appear on the resume, which are default-off, which can appear in cover-letter prose only.
-- **Headline mapping:** map JD archetypes to your headline candidates (e.g. *"Director of Engineering JDs → lead with X headline"*).
-- **Length defaults:** when to ship 1 page vs 2 pages.
-- **Multi-role consolidation:** if you held promotions inside one employer, how to present them.
+- **Work-history scope:** which employers always appear on the resume, which are default-off, which can appear in cover-letter prose only.
+- **Bullet counts per entry:** e.g. "current role: 6-9 bullets; previous senior role: 4-6; older roles when included: 1-2 lines max."
+- **Headline-to-archetype mapping:** map JD archetypes to your headline candidates (e.g. *"Director of Engineering JDs → lead with X headline"*).
+- **Length defaults:** when to ship 1 page vs 2 pages (e.g. *"Director / VP / Architect roles → 2 pages; IC / Specialist roles → 1 page"*).
+- **Trim order when overflowing the page cap:** which bullets to cut first (e.g. *"trim lowest-impact older-employer bullets first, then current-employer bullets, then shorten the longest lines"*).
+- **Multi-role consolidation:** if you held promotions inside one employer, how to present them (e.g. *"single entry, senior title, full date span, merged bullets"*).
+- **Education priority:** which education entries are always included, which are case-by-case.
+- **Cover-letter differentiators:** the one-line differentiator pulled in by JD archetype (e.g. *"FinTech JDs → mention MS FinTech"*).
+- **JD-archetype-to-emphasis mappings:** for each archetype you commonly see, the projects / employers / experiences to lead with and to de-emphasize.
 
 ## Flags & Items to Confirm Before Use
 

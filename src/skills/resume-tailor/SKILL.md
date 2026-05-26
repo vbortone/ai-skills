@@ -65,8 +65,8 @@ Read `master_profile.md` and `references/tailoring_playbook.md`. Construct a tai
 2. **Summary (3-4 sentences)** - open with years of experience and the strongest credibility signal for this role. Echo 2-3 high-priority JD keywords if truthful.
 3. **Skills section** - reorder the skills inventory so the JD-required skills lead. Keep groups; don't pad with skills the user doesn't have.
 4. **Experience bullets** - for each role, select bullets from the master profile that align with the JD, and rewrite them so the JD's verbs and nouns appear where truthful. Lead each bullet with the impact (number, scale, outcome) when available.
-5. **Length** - default 1-2 pages. Director / architect / leadership roles: 2 pages. Specialized IC roles: 1 page. Follow the user's "Tailoring Rules" section in `master_profile.md` for which employers to always include vs. default-off vs. condense.
-6. **Education + certifications** - include the user's primary education entries per `master_profile.md`. For certifications, lead with whichever match the JD.
+5. **Length, work-history scope, bullet counts, archetype mappings** - all user-specific. Read `master_profile.md` → **Tailoring Rules** for the user's policy on these. If the user's Tailoring Rules section is missing or doesn't cover the decision at hand, ASK the user once before generating, and offer to record the answer back to their Tailoring Rules section for future runs. Do not guess defaults.
+6. **Education + certifications** - include entries from `master_profile.md` per the user's Tailoring Rules. For certifications, lead with whichever match the JD.
 7. **Honesty rules** - never invent dates, employers, certifications, or metrics. Use the **Flags & Items to Confirm Before Use** section of `master_profile.md` to avoid overclaims. Re-read it before every generation.
 
 ### Step 4 - Generate DOCX
@@ -123,9 +123,9 @@ End the response with:
 - **Respect every Flag.** The "Flags & Items to Confirm Before Use" section of `master_profile.md` lists items that must NOT appear on a resume or require specific framing. Re-read this section before generating each output.
 - **Keep originals.** Do not modify `master_profile.md` outside the freshness-refresh flow, and never overwrite a previous Application folder for the same company+position+date - increment the date or add `_v2`.
 - **ATS-safe.** No tables-for-layout, no text boxes, no headers/footers, no images. **Use plain hyphens (`-`) only - never use Unicode dashes like en-dash (U+2013) or em-dash (U+2014) - some ATS parsers render them as garbage.** See `references/ats_rules.md` for the full list. Build scripts auto-normalize both Unicode dashes defensively.
-- **Hard cap 2 pages on resumes.** Never spill to page 3. If long, trim per the user's "Tailoring Rules" in `master_profile.md` (typically: lowest-impact legacy-employer bullets first, then older current-employer bullets, then shorten the longest lines). See "Length decisions" in `references/tailoring_playbook.md`.
+- **Hard cap 2 pages on resumes.** Never spill to page 3. If long, trim per the user's "Tailoring Rules" in `master_profile.md`. See "Length decisions" in `references/tailoring_playbook.md`.
 - **Hard cap 1 page on cover letters.** 2-3 paragraphs, ~250-300 words. Use 2 when hook + experience fuse cleanly; 3 when there's a real differentiator or gap to address. See `references/cover_letter_guide.md`.
-- **Default work-history scope.** Always follow the user's "Tailoring Rules" section in `master_profile.md` for which employers to always include vs. default-off vs. cover-letter-context-only.
+- **Work-history scope is user-defined.** Always follow the user's "Tailoring Rules" section in `master_profile.md` for which employers to always include vs. default-off vs. cover-letter-context-only. If the user has not documented a rule for a decision, ASK them rather than guessing.
 - **Consolidate multi-role same-company entries.** When the user held multiple roles at one company, render as a single entry under the senior title with the FULL date span; merge bullets from junior and senior roles. See "Multi-role consolidation" in `references/tailoring_playbook.md`.
 
 ## Reference files

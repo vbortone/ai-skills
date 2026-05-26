@@ -48,21 +48,18 @@ Echo 2-3 of the JD's exact keywords if they're truthful. Don't shoehorn.
 
 ### 4. Order and rewrite the experience
 
-**Default work-history scope** is user-specific. Read `master_profile.md` → **Tailoring Rules** section for which employers always appear on the resume, which are default-off, and which are cover-letter-context-only. If the user has not documented these rules, default to: include every employer with a date span ≥ 2 years; condense or omit short stints unless they're highly relevant to the JD.
+**Work-history scope is user-defined.** Read `master_profile.md` → **Tailoring Rules** for which employers always appear on the resume, which are default-off, and which are cover-letter-context-only. If the user's Tailoring Rules section is missing or silent on a decision, ASK the user before generating — do not guess from a skill-side default. Offer to record the answer back to their Tailoring Rules section so future runs don't ask again.
 
-**Consolidate multi-role same-company entries to the senior title:**
+**Bullet count per entry is user-defined.** Same rule: read `master_profile.md` → Tailoring Rules. If silent, ask the user once and offer to record.
+
+**Consolidate multi-role same-company entries to the senior title (process, not policy):**
 When the user held multiple roles at the same company, render them as a SINGLE consolidated entry on the resume:
 - **Title** = the most senior title held.
 - **Dates** = the FULL span (junior-role start through senior-role end / Present).
 - **Context** = optional one-line note acknowledging the promotion path if it strengthens the case. Skip if it adds clutter.
 - **Bullets** = pull from BOTH the senior and junior roles, picking the strongest impact bullets across the entire tenure. Hard-dollar wins and quantified outcomes from the junior role are usually worth keeping. The senior bullets typically lead.
 
-Rationale: visual fragmentation hurts readability, and a director-level resume with a single multi-year entry showing progression reads stronger than two separate entries that look like job-hopping. The cover letter and recruiter pitch can still surface the promotion arc verbatim.
-
-**Bullet count per consolidated entry (heuristic):**
-- Current / most-relevant role: 6-9 bullets.
-- Previous senior role (legacy, lower-relevance for most roles): 4-6 bullets.
-- Older roles when included: 1-2 lines max.
+Rationale: visual fragmentation hurts readability, and a single multi-year entry showing progression reads stronger than two separate entries that look like job-hopping. The cover letter and recruiter pitch can still surface the promotion arc verbatim.
 
 Rewrite each bullet so:
 - It opens with a verb (Led, Architected, Reduced, Implemented).
@@ -78,18 +75,11 @@ Don't pad. If the JD asks for a skill the user doesn't have, do NOT add it. Lead
 
 ### 6. Length decisions
 
-**Hard cap: 2 pages, no exceptions.** If the resume runs long, cut bullets — never spill to a third page. Post-render, `scripts/verify_output.py` renders to PDF and fails the build at page_count > 2.
+**Hard cap: 2 pages, no exceptions** (ATS convention, not user preference). If the resume runs long, cut bullets — never spill to a third page. Post-render, `scripts/verify_output.py` renders to PDF and fails the build at page_count > 2.
 
-Default heuristic for choosing 1 vs. 2 pages within the cap:
-- **2 pages** for: Director / VP / Head of / Architect / Principal / Engineering Manager / Senior Lead.
-- **1 page** for: Senior Engineer / Specialist / Consultant / contract roles where brevity is valued.
-- **Override** if the user explicitly states a length, or if their `master_profile.md` Tailoring Rules specify defaults.
+**Choice of 1 vs. 2 pages within the cap is user-defined.** Read `master_profile.md` → Tailoring Rules. If silent, ask the user, then offer to record the answer.
 
-If the rendered DOCX overflows 2 pages, the fix order is:
-1. Trim the lowest-impact bullet from the lowest-priority included employer first.
-2. Then trim from the current-employer if its consolidated entry has 8+ bullets.
-3. Then shorten the longest bullet to a single line.
-4. Only as a last resort, condense the summary by one sentence.
+**Trim order when overflowing the cap is user-defined.** Read `master_profile.md` → Tailoring Rules for the user's preferred trim order (typically: lowest-priority included employer's lowest-impact bullets first). If silent, ask the user before trimming and offer to record the answer.
 
 ### 7. Flag gaps in the tailoring notes
 
