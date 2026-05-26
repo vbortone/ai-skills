@@ -41,6 +41,7 @@ Use the auto-loaded project context throughout tailoring — it's how outputs so
 - **Recruiter threads** — if the user is tracking recruiter conversations, cross-reference the JD's company against known threads and surface relevant anchors (comp range, last contact, role-fit signals) in the tailoring notes.
 - **Open tasks / Someday items** — if the user maintains a tasks list, surface matches between the JD and any "someday" items the JD's domain could advance.
 - **Prior outcomes** — if the user archives past applications with outcome notes, check whether the current JD's company is one the user has applied to before, and quote relevant lessons from those outcomes in the tailoring notes.
+- **Comp targets** — if the user documents target compensation ranges by role tier (typically in `master_profile.md` → Tailoring Rules, `CLAUDE.md`, or a working-folder memory file), the comp-posture check in Step 1 uses them. If you can't find any documented target, ask the user before proceeding when the JD discloses comp.
 
 If you expected context that's not there — for example the user mentioned a recruiter thread but no recruiter file is loaded — ask the user before proceeding to make sure they're in the right working folder.
 
@@ -62,6 +63,15 @@ If the user pasted JD text, use it directly. If they gave a URL, fetch it throug
 4. **Ask the user to paste fourth.** Only when tiers 1-3 all fail or don't apply. Tell the user which tier failed and why; never invent or summarize from a stub.
 
 Once you have the JD, confirm with the user: *"I see this is for {Position} at {Company}. Want me to proceed?"* — proceed unless they correct.
+
+**Comp-posture check (when the JD discloses comp).** If the JD includes a salary range, total comp, or equity disclosure, compare against the user's documented comp targets (loaded in Step 0). Categorize the JD's range as **above target**, **at target**, **below target**, or **not disclosed**, and surface the finding BEFORE proceeding to tailor:
+
+- If **below target**: tell the user explicitly and give them a chance to abort cheaply. For example: *"The JD discloses $X-$Y. Your documented target for this tier is $Z — below target. Want to proceed and tailor anyway, or pass?"* Do not generate the full package without that confirmation.
+- If **at** or **above target**: note it and proceed.
+- If **not disclosed**: note that too and proceed; the package can still get written without disclosure.
+- If no comp targets are documented anywhere in the working folder, ask the user before proceeding — they may not have one and that's fine, but the answer should be explicit, not guessed.
+
+Record the comp-posture finding at the top of `tailoring_notes.md` regardless of which branch fired — it's the single most decision-relevant fact about the application.
 
 Extract from the JD:
 - Company name (sanitize for filenames)
