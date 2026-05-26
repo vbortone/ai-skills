@@ -44,7 +44,13 @@ Use the auto-loaded project context throughout tailoring — it's how outputs so
 
 If you expected context that's not there — for example the user mentioned a recruiter thread but no recruiter file is loaded — ask the user before proceeding to make sure they're in the right working folder.
 
-The cross-references for active applications, recruiter threads, open tasks, and prior outcomes are owned by the sibling **`application-tracker`** skill when present. If it isn't loaded, use whatever's already in Claude Code's session context from `CLAUDE.md` / `memory/`.
+The cross-references for active applications, recruiter threads, open tasks, and prior outcomes are owned by the sibling **`application-tracker`** skill. When it's loaded and the JD has a company name, invoke its three scripts to surface context before tailoring:
+
+- `application-tracker/scripts/find_prior_applications.py --company "{Company}" --working-folder "{working_folder}"` — prior applications + outcome excerpts. Quote relevant outcomes in `tailoring_notes.md` → "Prior outcomes" section.
+- `application-tracker/scripts/find_recruiter_threads.py --company "{Company}" --recruiters-file "{working_folder}/memory/people/recruiters.md"` — recruiter threads mentioning the company. Cite name, firm, last contact, comp anchor in `tailoring_notes.md` → "Recruiter context" section.
+- `application-tracker/scripts/find_someday_matches.py --tasks-file "{working_folder}/TASKS.md" --keywords "{JD top keywords}"` — Someday items the JD's domain could advance. Surface in `tailoring_notes.md` → "Items to consider" section.
+
+If `application-tracker` isn't loaded, use whatever's already in Claude Code's session context from `CLAUDE.md` / `memory/`.
 
 ### Step 1 - Confirm the JD
 

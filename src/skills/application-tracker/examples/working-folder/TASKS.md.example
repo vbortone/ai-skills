@@ -1,0 +1,25 @@
+# Tasks
+
+Working task list. Four standard sections — `find_someday_matches.py` scans `Someday` by default; override with `--section-heading`.
+
+## Active
+
+- [ ] Follow up with Jane Recruiter on the {Target Company} paper screen — last contact 2026-04-19.
+- [ ] Refresh `master_profile.md` with the post-promotion title and 2026 metrics.
+
+## Waiting On
+
+- [ ] {Company X} — hiring manager interview to be scheduled; recruiter promised by end of week.
+- [ ] {Company Y} — debrief feedback from 2026-04-30 panel.
+
+## Someday
+
+- [ ] Build a healthcare-AI artifact for portfolio — strengthens any future HCLS application.
+- [ ] Articulate the "EM-of-EMs" growth-edge story for VP-track interviews.
+- [ ] Quantify the FinTech cost-out wins more precisely (currently approximate).
+- [ ] Draft a "manager of managers" interview prep doc.
+
+## Done
+
+- [x] Initial master_profile.md draft (2026-04-01).
+- [x] First recruiter outreach burst (2026-04-05).

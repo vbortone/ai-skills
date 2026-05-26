@@ -1,0 +1,21 @@
+# Outcome — {Company} {Role} ({YYYY-MM-DD})
+
+> Drop this file into the application's folder when you move it from `Applications/` to `Archive/Applications/`. The `application-tracker` skill returns the first content paragraph as the outcome excerpt when another tailoring run queries prior outcomes for the same company.
+
+**Status:** Rejected / Withdrew / No response / Hired — {pick one}.
+**Decision date:** {YYYY-MM-DD}
+**Notified by:** {Name, Title — Company / Firm}.
+**Your read:** {one-line summary in your own voice — "Not the right fit", "Budget pulled", "Better candidate", "Stack mismatch", etc.}
+
+## What happened
+
+A few paragraphs of detail. What stage did the application reach? What feedback was given? What signals came through that don't show up in the formal feedback?
+
+## Lessons
+
+- Concrete things to do differently next time, or framings that worked / didn't work.
+- Patterns to flag in `tailoring_notes.md` for any future application to this company or its peers.
+
+## Follow-ups
+
+- [ ] Anything to do as a result (keep in touch with the recruiter, revisit in 6 months, etc.)
