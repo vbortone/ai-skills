@@ -130,8 +130,10 @@ Create a per-application subfolder so the working folder stays organized:
 ├── {Company}_{Position}_{YYYY-MM-DD}_CoverLetter.docx
 ├── recruiter_pitch.md
 ├── job_description.txt          (verbatim JD captured at apply-time - JDs vanish from the web)
-└── tailoring_notes.md           (what was emphasized, what was de-emphasized, flags raised)
+└── tailoring_notes.md           (what was emphasized, what was de-emphasized, flags raised — see `references/tailoring_notes_template.md`)
 ```
+
+**Write `tailoring_notes.md` per the structure in `references/tailoring_notes_template.md`.** Section order is load-bearing — comp posture first, project context second (prior outcomes / recruiter / Someday matches from application-tracker), then role-at-a-glance, tailoring choices, and finally an "honest read" recommendation. Omit sections that have no content for the run, but don't reorder.
 
 **Filename sanitization:**
 - Replace spaces with underscores
@@ -174,6 +176,7 @@ Read these as needed during a run; they're not always required:
 - `references/tailoring_playbook.md` - How to map JD requirements to bullets. Read during tailoring.
 - `references/cover_letter_guide.md` - Cover letter structure. Read when generating cover letter.
 - `references/recruiter_pitch_guide.md` - Recruiter pitch format. Read when generating pitch.
+- `references/tailoring_notes_template.md` - Structure for `tailoring_notes.md`. Read in Step 6 before writing the notes.
 - `scripts/build_resume_docx.py` - DOCX generator. Pass tailored content as JSON via stdin.
 - `scripts/build_cover_letter_docx.py` - Cover letter DOCX generator.
 - `scripts/verify_output.py` - Post-render anonymization + page-count verifier. Invoked automatically by the build scripts.
