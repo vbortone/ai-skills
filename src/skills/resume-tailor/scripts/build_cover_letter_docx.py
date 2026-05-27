@@ -68,12 +68,29 @@ NAME_SIZE = Pt(16)
 # garbage in some ATS parsers. Defensive substitution before any text hits
 # the document.
 _DASH_NORMALIZE = str.maketrans({"–": "-", "—": "-"})
+_DASH_CHARS = frozenset("–—")
+
+# Counter for dash normalizations applied during the current build.
+# Reset at the start of every build_cover_letter() call; surfaced in
+# the render report.
+_dash_normalize_count: int = 0
+
+
+def _reset_dash_normalize_counter() -> None:
+    global _dash_normalize_count
+    _dash_normalize_count = 0
+
+
+def _get_dash_normalize_count() -> int:
+    return _dash_normalize_count
 
 
 def _ats_safe(text):
+    global _dash_normalize_count
     if text is None:
         return text
     if isinstance(text, str):
+        _dash_normalize_count += sum(1 for c in text if c in _DASH_CHARS)
         return text.translate(_DASH_NORMALIZE)
     return text
 
@@ -119,6 +136,7 @@ def _add_line(doc, text, *, bold=False, italic=False, size=BODY_SIZE, before=0, 
 
 
 def build_cover_letter(data: dict, output_path: Path) -> Path:
+    _reset_dash_normalize_counter()
     data = _normalize_strings(data)
     doc = Document()
 
@@ -232,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
         page_count,
         COVER_LETTER_MAX_PAGES if not args.skip_page_check else None,
         config_path,
+        dash_normalizations_applied=_get_dash_normalize_count(),
     )
     exit_code = 0
 

@@ -19,7 +19,7 @@ Common trigger phrases:
 - *"Any recruiters working {Company}?"* — recruiter cross-reference
 - *"What's on my someday list that matches this JD?"* — task matching
 - *"Summarize my pipeline / active applications."* — state aggregation
-- *"Archive this application."* — write-side (P3.19; deferred)
+- *"Archive this application."* — move active → archived via `scripts/archive_application.py`
 
 Also acts as a callable context provider for `resume-tailor`: when a tailoring run starts, `resume-tailor`'s Step 0 can invoke application-tracker scripts to surface prior outcomes, recruiter threads, and someday matches for inclusion in `tailoring_notes.md`.
 
@@ -103,6 +103,65 @@ Returns JSON:
 
 The script returns the surrounding markdown section for each match — the LLM parses the structured fields (name, firm, last contact, comp anchor) from the excerpt at runtime.
 
+### `scripts/archive_application.py`
+
+Move an application from `Applications/` to `Archive/Applications/` and stub an `_outcome.md` if one isn't already there. This is the only **write** operation in the skill — every other script is read-only.
+
+```
+python archive_application.py \
+    --application-folder "/path/to/Applications/Globant_VP_Technology_2026-05-16" \
+    --working-folder "/path/to/working-folder"
+
+# Optional: pre-populate outcome fields so the stub isn't all placeholders.
+python archive_application.py \
+    --application-folder "..." \
+    --working-folder "..." \
+    --outcome-status "Rejected" \
+    --notified-by "Nicole Gruber, Executive Recruiting Partner — Globant" \
+    --your-read "Not quite the right fit." \
+    --outcome-notes "Multi-line note describing what happened, what feedback came through, etc."
+
+# --dry-run prints the planned move + the follow-up nudges without touching anything.
+```
+
+What it does:
+1. Validates that `--application-folder` exists and is inside the working folder's `Applications/` directory.
+2. Computes the destination path under `Archive/Applications/` (same folder name).
+3. Refuses to clobber an existing destination — fail loudly with exit code 1 instead.
+4. Moves the folder via `shutil.move` (preserves all child files: DOCX, JSON, MD).
+5. Stubs `_outcome.md` from a template if not already present; populates whichever fields you passed and leaves placeholders for the rest.
+6. Emits a JSON report listing the move + a list of follow-up nudges the user / LLM should apply to **other** working-folder files (TASKS.md, memory/projects/job-search.md, memory/people/recruiters.md).
+
+What it does NOT do:
+- It does **not** mutate `TASKS.md`, the job-search memory file, or the recruiters file. Those are user-curated and the right edits depend on the user's conventions; the script surfaces nudges instead.
+- It does **not** overwrite an existing `_outcome.md` in the source folder — if one exists, it's moved as-is and the stub step is skipped.
+
+Returns JSON:
+```json
+{
+  "dry_run": false,
+  "moved_from": "/working-folder/Applications/Globant_VP_Technology_2026-05-16",
+  "moved_to": "/working-folder/Archive/Applications/Globant_VP_Technology_2026-05-16",
+  "folder_name": "Globant_VP_Technology_2026-05-16",
+  "outcome_file": "/working-folder/Archive/Applications/Globant_VP_Technology_2026-05-16/_outcome.md",
+  "outcome_status": "Rejected",
+  "outcome_stubbed": true,
+  "follow_ups": [
+    "Update TASKS.md: move any Active task referencing this application to Done.",
+    "Update memory/projects/job-search.md: move Globant_VP_Technology_2026-05-16 from active to closed; populate the outcome row.",
+    "Update memory/people/recruiters.md: mark the relevant thread closed/lapsed if applicable.",
+    "Fill in the placeholder fields in _outcome.md — the first content paragraph is what find_prior_applications.py returns when another tailoring run hits the same company."
+  ]
+}
+```
+
+Exit codes:
+- `0` — moved (or dry-run completed)
+- `1` — destination already exists; refused to clobber
+- `2` — application folder is not inside the working folder's applications directory
+- `3` — application folder does not exist
+- `4` — I/O error during move
+
 ### `scripts/find_someday_matches.py`
 
 Scan the Someday section of `TASKS.md` for items matching keywords from a JD.
@@ -139,8 +198,8 @@ When `resume-tailor` runs and `application-tracker` is loaded:
 
 ## Out of scope (for now)
 
-- **Archive workflow** (P3.19 in the resume-tailor improvement plan) — moving an active application to `Archive/Applications/`, stubbing `_outcome.md`, updating recruiter/task state. Deferred; the skill is read-only for the MVP.
 - **Recruiter thread parsing** — the skill returns matched markdown sections; it does not enforce a structured schema for recruiter entries. The LLM extracts structured fields per recruiter at runtime.
+- **Automatic mutation of user-curated context files** — `archive_application.py` surfaces follow-up nudges for TASKS.md / job-search memory / recruiter file changes but does not apply them. Conventions for those files vary too much across users to safely automate.
 
 ## Reference files
 
@@ -148,3 +207,4 @@ When `resume-tailor` runs and `application-tracker` is loaded:
 - `scripts/find_prior_applications.py` — re-application detection.
 - `scripts/find_recruiter_threads.py` — recruiter cross-reference.
 - `scripts/find_someday_matches.py` — Someday-item matching.
+- `scripts/archive_application.py` — move an application to the archive, stub `_outcome.md`, surface follow-up nudges.

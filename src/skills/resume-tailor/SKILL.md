@@ -129,11 +129,34 @@ Create a per-application subfolder so the working folder stays organized:
 ├── {Company}_{Position}_{YYYY-MM-DD}_Resume.docx
 ├── {Company}_{Position}_{YYYY-MM-DD}_CoverLetter.docx
 ├── recruiter_pitch.md
+├── headline.txt                 (chosen LinkedIn-style headline as plain text — copy-paste friendly during recruiter calls)
 ├── job_description.txt          (verbatim JD captured at apply-time - JDs vanish from the web)
+├── job_metadata.json            (JD provenance — see schema below)
 └── tailoring_notes.md           (what was emphasized, what was de-emphasized, flags raised — see `references/tailoring_notes_template.md`)
 ```
 
 **Write `tailoring_notes.md` per the structure in `references/tailoring_notes_template.md`.** Section order is load-bearing — comp posture first, project context second (prior outcomes / recruiter / Someday matches from application-tracker), then role-at-a-glance, tailoring choices, and finally an "honest read" recommendation. Omit sections that have no content for the run, but don't reorder.
+
+**Write `headline.txt`** containing just the chosen headline from Step 3 (no trailing newline expected, plain text only). Recruiters routinely ask *"what title do you want on LinkedIn?"* during phone screens — this file removes the copy-paste friction.
+
+**Write `job_metadata.json`** alongside `job_description.txt` capturing JD provenance:
+
+```json
+{
+  "url": "https://www.linkedin.com/jobs/view/4399040955",
+  "source": "linkedin",
+  "fetched_at": "2026-05-25T14:23:11Z",
+  "fetched_via": "chrome-mcp",
+  "recruiter_thread_id": "kegan-smith-talentunify"
+}
+```
+
+Field meanings:
+- `url` — JD URL when the user supplied one; `null` for paste-only.
+- `source` — short identifier for the source platform (`linkedin`, `ziprecruiter`, `indeed`, `dice`, `company-careers`, `recruiter-paste`, `pdf`, `screenshot`, etc.). Pick the most specific applicable.
+- `fetched_at` — ISO-8601 UTC timestamp of when the JD was captured.
+- `fetched_via` — which fetch tier from Step 1 succeeded: `mcp-connector`, `webfetch`, `chrome-mcp`, or `user-paste`. Tracks success rates of the tier order over time.
+- `recruiter_thread_id` — slug pointing to the recruiter section in the user's recruiter file when `application-tracker`'s `find_recruiter_threads.py` returned a match, otherwise `null`. Use a kebab-case slug derived from the heading (e.g. `## Kegan Smith — TalentUnify` → `kegan-smith-talentunify`).
 
 **Filename sanitization:**
 - Replace spaces with underscores
@@ -146,12 +169,25 @@ If `Applications/` doesn't exist yet, create it.
 ### Step 7 - Report back
 
 End the response with:
-- A `computer://` link to the per-application subfolder
-- A 2-sentence summary of what was tailored (headline chosen, top 3 emphasized themes)
-- Confirmation that post-render compliance checks passed. The build scripts automatically run two checks (see `scripts/verify_output.py`) and emit a JSON report on stdout:
-  - **Anonymization** — patterns come from `{working_folder}/tailor_config.json` (auto-discovered via walk-up from the output directory, or pass `--config <path>`). Fails (exit code 1) if any pattern matches the rendered DOCX. If no config or no patterns, the check is skipped with an info note. If the target JD employer is one of the anonymized employers and naming them is correct, pass `--skip-anonymization` to the build scripts and note it in the report.
-  - **Page count** — renders the DOCX to PDF via docx2pdf (requires MS Word) and fails (exit code 2) if the resume exceeds 2 pages or the cover letter exceeds 1 page. Pass `--no-strict-pages` to downgrade to a warning, or `--skip-page-check` when Word isn't available.
-- Any flags raised (e.g., "JD asks for 5+ years of GCP — your profile shows Azure depth, not GCP. I led with Azure cloud-architecture experience and noted multi-cloud transferability rather than claim GCP.")
+
+- A `computer://` link to the per-application subfolder.
+- A 2-sentence summary of what was tailored (headline chosen, top 3 emphasized themes).
+- The **render report** for each rendered DOCX. The build scripts emit a JSON object on stdout — parse it and surface these fields verbatim:
+
+  | Field | Meaning | Surface as |
+  | --- | --- | --- |
+  | `docx_path` | Path to the rendered DOCX | computer:// link |
+  | `page_count` / `max_pages` / `page_over_cap` | Actual pages vs. cap | "Resume: 2 pages (cap 2). ✅" / "Cover letter: 2 pages (cap 1). ❌" |
+  | `anonymization_violations` | List of forbidden tokens that appeared (empty = passed) | "Anonymization: passed" / "Anonymization: 1 violation — 'PwC' near 'Worked for PwC.'" |
+  | `dash_normalizations_applied` | Count of en-dash / em-dash → hyphen substitutions during build | Mention only if non-zero (signal the upstream JSON layer is introducing Unicode dashes — likely a bug worth flagging) |
+  | `config_path` | Which `tailor_config.json` the verifier used (or `null`) | Only surface if `null` and you expected one |
+  | `passed` | Overall pass/fail | "All checks passed." or which check(s) failed |
+
+  Tier-related notes to include when applicable:
+  - **Anonymization** — if `--skip-anonymization` was passed because the target JD employer is one of the anonymized employers, note that explicitly. If `config_path` is `null` and the user has documented anonymization in `master_profile.md`, warn that the verifier ran without patterns.
+  - **Page count** — if `--no-strict-pages` was passed or `--skip-page-check` (MS Word unavailable), note that the page-count gate was relaxed.
+
+- Any flags raised (e.g., *"JD asks for 5+ years of GCP — your profile shows Azure depth, not GCP. I led with Azure cloud-architecture experience and noted multi-cloud transferability rather than claim GCP."*)
 
 ## Critical rules
 
