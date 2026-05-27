@@ -129,11 +129,34 @@ Create a per-application subfolder so the working folder stays organized:
 ├── {Company}_{Position}_{YYYY-MM-DD}_Resume.docx
 ├── {Company}_{Position}_{YYYY-MM-DD}_CoverLetter.docx
 ├── recruiter_pitch.md
+├── headline.txt                 (chosen LinkedIn-style headline as plain text — copy-paste friendly during recruiter calls)
 ├── job_description.txt          (verbatim JD captured at apply-time - JDs vanish from the web)
+├── job_metadata.json            (JD provenance — see schema below)
 └── tailoring_notes.md           (what was emphasized, what was de-emphasized, flags raised — see `references/tailoring_notes_template.md`)
 ```
 
 **Write `tailoring_notes.md` per the structure in `references/tailoring_notes_template.md`.** Section order is load-bearing — comp posture first, project context second (prior outcomes / recruiter / Someday matches from application-tracker), then role-at-a-glance, tailoring choices, and finally an "honest read" recommendation. Omit sections that have no content for the run, but don't reorder.
+
+**Write `headline.txt`** containing just the chosen headline from Step 3 (no trailing newline expected, plain text only). Recruiters routinely ask *"what title do you want on LinkedIn?"* during phone screens — this file removes the copy-paste friction.
+
+**Write `job_metadata.json`** alongside `job_description.txt` capturing JD provenance:
+
+```json
+{
+  "url": "https://www.linkedin.com/jobs/view/4399040955",
+  "source": "linkedin",
+  "fetched_at": "2026-05-25T14:23:11Z",
+  "fetched_via": "chrome-mcp",
+  "recruiter_thread_id": "kegan-smith-talentunify"
+}
+```
+
+Field meanings:
+- `url` — JD URL when the user supplied one; `null` for paste-only.
+- `source` — short identifier for the source platform (`linkedin`, `ziprecruiter`, `indeed`, `dice`, `company-careers`, `recruiter-paste`, `pdf`, `screenshot`, etc.). Pick the most specific applicable.
+- `fetched_at` — ISO-8601 UTC timestamp of when the JD was captured.
+- `fetched_via` — which fetch tier from Step 1 succeeded: `mcp-connector`, `webfetch`, `chrome-mcp`, or `user-paste`. Tracks success rates of the tier order over time.
+- `recruiter_thread_id` — slug pointing to the recruiter section in the user's recruiter file when `application-tracker`'s `find_recruiter_threads.py` returned a match, otherwise `null`. Use a kebab-case slug derived from the heading (e.g. `## Kegan Smith — TalentUnify` → `kegan-smith-talentunify`).
 
 **Filename sanitization:**
 - Replace spaces with underscores
