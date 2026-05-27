@@ -240,6 +240,7 @@ def build_report(
     page_count: int | None,
     max_pages: int | None,
     config_path: Path | None,
+    dash_normalizations_applied: int | None = None,
 ) -> dict:
     page_over_cap = (
         page_count is not None and max_pages is not None and page_count > max_pages
@@ -251,6 +252,7 @@ def build_report(
         "page_count": page_count,
         "max_pages": max_pages,
         "page_over_cap": page_over_cap,
+        "dash_normalizations_applied": dash_normalizations_applied,
         "passed": not violations and not page_over_cap,
     }
 
