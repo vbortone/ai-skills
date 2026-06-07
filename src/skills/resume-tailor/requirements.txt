@@ -1,3 +1,10 @@
 python-docx>=1.0
-docx2pdf>=0.1.8
 pypdf>=4.0
+
+# The post-render page-count gate (scripts/verify_output.py) renders the DOCX to
+# PDF using an external LibreOffice install (the `soffice` binary), not a pip
+# package. LibreOffice ships the same headless engine for Windows, Linux, and
+# macOS, so behavior is identical across platforms. If LibreOffice isn't
+# installed the gate degrades gracefully — it is skipped, not failed. Install
+# from https://www.libreoffice.org/download/ or point RESUME_TAILOR_SOFFICE at
+# the soffice binary.

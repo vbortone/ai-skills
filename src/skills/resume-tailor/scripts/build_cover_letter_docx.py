@@ -49,6 +49,9 @@ from docx.oxml import OxmlElement
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify_output import (  # noqa: E402
+    ConverterNotFoundError,
+    LIBREOFFICE_INSTALL_HINT,
+    LIBREOFFICE_NOT_FOUND,
     build_report,
     find_config,
     load_config,
@@ -225,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-page-check",
         action="store_true",
-        help="Skip the page-count check entirely (e.g. when MS Word isn't available).",
+        help="Skip the page-count check entirely (e.g. when LibreOffice isn't installed).",
     )
     args = parser.parse_args(argv)
 
@@ -241,16 +244,27 @@ def main(argv: list[str] | None = None) -> int:
 
     violations = verify_anonymization(out, config=config, skip=args.skip_anonymization)
     page_count: int | None = None
-    if not args.skip_page_check:
-        page_count = verify_page_count(out, max_pages=COVER_LETTER_MAX_PAGES)
+    page_check_reason: str | None = None
+    page_check_ran = not args.skip_page_check
+    if page_check_ran:
+        try:
+            page_count = verify_page_count(out, max_pages=COVER_LETTER_MAX_PAGES)
+        except ConverterNotFoundError:
+            page_check_ran = False
+            page_check_reason = LIBREOFFICE_NOT_FOUND
+            print(
+                f"INFO: page-count gate skipped - {LIBREOFFICE_INSTALL_HINT}",
+                file=sys.stderr,
+            )
 
     report = build_report(
         out,
         violations,
         page_count,
-        COVER_LETTER_MAX_PAGES if not args.skip_page_check else None,
+        COVER_LETTER_MAX_PAGES if page_check_ran else None,
         config_path,
         dash_normalizations_applied=_get_dash_normalize_count(),
+        page_check_reason=page_check_reason,
     )
     exit_code = 0
 

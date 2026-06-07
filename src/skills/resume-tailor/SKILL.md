@@ -114,6 +114,11 @@ Use `scripts/build_resume_docx.py`. It accepts a JSON description of the tailore
 - Simple bullets (•), MM/YYYY dates, US English
 - See `references/ats_rules.md` for the full rule set
 
+The 2-page gate renders the DOCX to PDF with **LibreOffice headless** (the same
+engine on Windows, Linux, and macOS). If LibreOffice isn't installed the gate is
+**skipped, not failed** — the DOCX still builds and the render report records
+`page_check_reason`. Install from https://www.libreoffice.org/download/ to enable it.
+
 ### Step 5 - Cover letter + recruiter pitch
 
 Generate both in the same run unless the user opts out:
@@ -180,12 +185,13 @@ End the response with:
   | `page_count` / `max_pages` / `page_over_cap` | Actual pages vs. cap | "Resume: 2 pages (cap 2). ✅" / "Cover letter: 2 pages (cap 1). ❌" |
   | `anonymization_violations` | List of forbidden tokens that appeared (empty = passed) | "Anonymization: passed" / "Anonymization: 1 violation — 'PwC' near 'Worked for PwC.'" |
   | `dash_normalizations_applied` | Count of en-dash / em-dash → hyphen substitutions during build | Mention only if non-zero (signal the upstream JSON layer is introducing Unicode dashes — likely a bug worth flagging) |
+  | `page_check_reason` | Why the page-count gate didn't run (e.g. `libreoffice-not-found`) | Surface only when non-null: "Page-count gate skipped: LibreOffice not installed — `page_count` unverified." |
   | `config_path` | Which `tailor_config.json` the verifier used (or `null`) | Only surface if `null` and you expected one |
   | `passed` | Overall pass/fail | "All checks passed." or which check(s) failed |
 
   Tier-related notes to include when applicable:
   - **Anonymization** — if `--skip-anonymization` was passed because the target JD employer is one of the anonymized employers, note that explicitly. If `config_path` is `null` and the user has documented anonymization in `master_profile.md`, warn that the verifier ran without patterns.
-  - **Page count** — if `--no-strict-pages` was passed or `--skip-page-check` (MS Word unavailable), note that the page-count gate was relaxed.
+  - **Page count** — if `--no-strict-pages` or `--skip-page-check` was passed, note that the page-count gate was relaxed. If `page_check_reason` is `libreoffice-not-found`, the gate was auto-skipped because LibreOffice isn't installed — say so and note `page_count` is unverified.
 
 - Any flags raised (e.g., *"JD asks for 5+ years of GCP — your profile shows Azure depth, not GCP. I led with Azure cloud-architecture experience and noted multi-cloud transferability rather than claim GCP."*)
 
