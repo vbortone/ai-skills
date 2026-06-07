@@ -10,15 +10,19 @@ Two compliance checks run after a build script renders a DOCX:
    if no config is found or the `anonymization` section is empty, this
    check is skipped with an informational note.
 2. **Page count** — resumes are capped at 2 pages and cover letters at 1
-   page. Render the DOCX to PDF via docx2pdf (MS Word COM automation),
-   count pages with pypdf, fail loudly if over cap. Override with
-   --no-strict-pages.
+   page. Render the DOCX to PDF via LibreOffice headless (`soffice
+   --convert-to pdf`, the same engine on Windows, Linux, and macOS), count
+   pages with pypdf, fail loudly if over cap. Override with
+   --no-strict-pages. If LibreOffice isn't installed the gate degrades
+   gracefully: it is skipped (not failed), page_count is left null, and the
+   report records `page_check_reason="libreoffice-not-found"`.
 
 Library use
 -----------
     from verify_output import (
         verify_anonymization,
         verify_page_count,
+        ConverterNotFoundError,
         load_config,
         find_config,
     )
@@ -46,7 +50,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -57,13 +64,33 @@ from docx import Document
 
 CONFIG_FILENAME = "tailor_config.json"
 
+# How long to wait on a single LibreOffice headless conversion before giving up.
+SOFFICE_TIMEOUT_SECONDS = 120
+
+# Reason code recorded in the render report when the page-count gate is skipped
+# because no LibreOffice binary could be located.
+LIBREOFFICE_NOT_FOUND = "libreoffice-not-found"
+
+# Where to point users who need the converter.
+LIBREOFFICE_INSTALL_HINT = (
+    "Install LibreOffice (https://www.libreoffice.org/download/) to enable the "
+    "page-count gate, or set RESUME_TAILOR_SOFFICE to the soffice binary."
+)
+
 
 class AnonymizationError(RuntimeError):
     """Raised when forbidden tokens are found in a rendered DOCX."""
 
 
 class PageCountError(RuntimeError):
-    """Raised when the rendered PDF exceeds the page cap."""
+    """Raised when the rendered PDF exceeds the page cap, or conversion fails."""
+
+
+class ConverterNotFoundError(RuntimeError):
+    """Raised when no LibreOffice binary can be located to render the PDF.
+
+    Distinct from PageCountError so callers can tell "engine missing" (skip the
+    gate gracefully) apart from "conversion genuinely failed" (a real error)."""
 
 
 class ConfigError(RuntimeError):
@@ -205,21 +232,101 @@ def count_pdf_pages(pdf_path: Path) -> int:
     return len(PdfReader(str(pdf_path)).pages)
 
 
-def render_to_pdf(docx_path: Path, pdf_dir: Path | None = None) -> Path:
-    """Convert a DOCX to PDF via docx2pdf (Word COM automation on Windows).
+def _candidate_soffice_paths() -> list[str]:
+    """OS-specific install locations to probe after PATH lookup fails."""
+    if sys.platform.startswith("win"):
+        return [
+            r"C:\Program Files\LibreOffice\program\soffice.exe",
+            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+        ]
+    if sys.platform == "darwin":
+        return ["/Applications/LibreOffice.app/Contents/MacOS/soffice"]
+    return [
+        "/usr/bin/soffice",
+        "/usr/bin/libreoffice",
+        "/usr/local/bin/soffice",
+        "/snap/bin/libreoffice",
+        "/opt/libreoffice/program/soffice",
+    ]
 
-    Returns the PDF path. The PDF lives in pdf_dir if provided, otherwise
-    alongside the DOCX. Callers using this for verification should pass a
-    tempdir so the PDF gets cleaned up automatically."""
-    from docx2pdf import convert
+
+def find_soffice() -> str | None:
+    """Locate the LibreOffice binary, or return None if it can't be found.
+
+    Lookup order: explicit env override (RESUME_TAILOR_SOFFICE, then
+    SOFFICE_PATH), then `soffice`/`libreoffice` on PATH, then known per-OS
+    install locations. The same headless engine ships for Windows, Linux, and
+    macOS, so this keeps the page-count gate identical across platforms."""
+    for env_var in ("RESUME_TAILOR_SOFFICE", "SOFFICE_PATH"):
+        override = os.environ.get(env_var)
+        if override and Path(override).is_file():
+            return override
+
+    for name in ("soffice", "libreoffice"):
+        found = shutil.which(name)
+        if found:
+            return found
+
+    for candidate in _candidate_soffice_paths():
+        if Path(candidate).is_file():
+            return candidate
+
+    return None
+
+
+def render_to_pdf(docx_path: Path, pdf_dir: Path | None = None) -> Path:
+    """Convert a DOCX to PDF via LibreOffice headless. Returns the PDF path.
+
+    The PDF lives in pdf_dir if provided, otherwise alongside the DOCX.
+    Callers using this for verification should pass a tempdir so the PDF gets
+    cleaned up automatically.
+
+    Raises ConverterNotFoundError when no LibreOffice binary is available, and
+    PageCountError when the conversion runs but produces no PDF."""
+    soffice = find_soffice()
+    if soffice is None:
+        raise ConverterNotFoundError(
+            f"No LibreOffice binary found. {LIBREOFFICE_INSTALL_HINT}"
+        )
 
     out_dir = pdf_dir if pdf_dir is not None else docx_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = out_dir / (docx_path.stem + ".pdf")
-    convert(str(docx_path), str(pdf_path))
+
+    # Run with an isolated, throwaway user profile. Without this, a LibreOffice
+    # instance the user already has open holds a lock on the default profile and
+    # the headless conversion silently no-ops. as_uri() yields a correct
+    # file:// URI on every OS (handles Windows drive letters and spaces).
+    with tempfile.TemporaryDirectory(prefix="resume-tailor-loprofile-") as profile_dir:
+        profile_uri = Path(profile_dir).as_uri()
+        cmd = [
+            soffice,
+            "--headless",
+            f"-env:UserInstallation={profile_uri}",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            str(out_dir),
+            str(docx_path),
+        ]
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=SOFFICE_TIMEOUT_SECONDS,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise PageCountError(
+                f"LibreOffice conversion of {docx_path.name} timed out after "
+                f"{SOFFICE_TIMEOUT_SECONDS}s."
+            ) from exc
+
     if not pdf_path.is_file():
         raise PageCountError(
-            f"docx2pdf did not produce a PDF at {pdf_path}. Is MS Word installed?"
+            f"LibreOffice did not produce a PDF at {pdf_path} "
+            f"(exit {result.returncode}). stderr: {result.stderr.strip() or '(empty)'}"
         )
     return pdf_path
 
@@ -228,7 +335,8 @@ def verify_page_count(docx_path: Path, max_pages: int) -> int:
     """Render the DOCX to a temp PDF, count pages, return the count.
 
     Does not raise on overage — caller decides whether to enforce. Use the
-    returned count against max_pages."""
+    returned count against max_pages. Propagates ConverterNotFoundError when
+    LibreOffice is unavailable so callers can skip the gate gracefully."""
     with tempfile.TemporaryDirectory(prefix="resume-tailor-pdf-") as tmpdir:
         pdf_path = render_to_pdf(docx_path, pdf_dir=Path(tmpdir))
         return count_pdf_pages(pdf_path)
@@ -241,6 +349,7 @@ def build_report(
     max_pages: int | None,
     config_path: Path | None,
     dash_normalizations_applied: int | None = None,
+    page_check_reason: str | None = None,
 ) -> dict:
     page_over_cap = (
         page_count is not None and max_pages is not None and page_count > max_pages
@@ -252,6 +361,7 @@ def build_report(
         "page_count": page_count,
         "max_pages": max_pages,
         "page_over_cap": page_over_cap,
+        "page_check_reason": page_check_reason,
         "dash_normalizations_applied": dash_normalizations_applied,
         "passed": not violations and not page_over_cap,
     }
@@ -311,10 +421,27 @@ def main(argv: list[str] | None = None) -> int:
     violations = verify_anonymization(docx_path, config=config, skip=args.skip_anonymization)
 
     page_count: int | None = None
+    page_check_reason: str | None = None
+    max_pages_for_report: int | None = args.max_pages
     if args.max_pages is not None:
-        page_count = verify_page_count(docx_path, max_pages=args.max_pages)
+        try:
+            page_count = verify_page_count(docx_path, max_pages=args.max_pages)
+        except ConverterNotFoundError:
+            page_check_reason = LIBREOFFICE_NOT_FOUND
+            max_pages_for_report = None
+            print(
+                f"INFO: page-count gate skipped - {LIBREOFFICE_INSTALL_HINT}",
+                file=sys.stderr,
+            )
 
-    report = build_report(docx_path, violations, page_count, args.max_pages, config_path)
+    report = build_report(
+        docx_path,
+        violations,
+        page_count,
+        max_pages_for_report,
+        config_path,
+        page_check_reason=page_check_reason,
+    )
     print(json.dumps(report, indent=2))
 
     exit_code = 0

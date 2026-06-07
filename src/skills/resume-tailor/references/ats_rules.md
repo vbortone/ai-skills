@@ -6,7 +6,7 @@ The `build_resume_docx.py` script bakes most of these rules in. This document ex
 
 ## Hard rules (never break)
 
-0. **2 pages maximum.** Never spill to page 3. ATS parsers handle 2-page resumes fine; recruiters at director-and-above seniority expect 1-2 pages. A 3rd page reads as undisciplined regardless of content. If the resume overflows, cut bullets per the trim order in `tailoring_playbook.md` "Length decisions". Enforced post-render by `scripts/verify_output.py` (renders to PDF, counts pages, fails the build at page_count > 2).
+0. **2 pages maximum.** Never spill to page 3. ATS parsers handle 2-page resumes fine; recruiters at director-and-above seniority expect 1-2 pages. A 3rd page reads as undisciplined regardless of content. If the resume overflows, cut bullets per the trim order in `tailoring_playbook.md` "Length decisions". Enforced post-render by `scripts/verify_output.py` (renders to PDF via LibreOffice headless — same on Windows/Linux/macOS — counts pages, fails the build at page_count > 2; skipped, not failed, when LibreOffice isn't installed).
 1. **Single column.** Do not use side-by-side layout, even with tables. Multi-column resumes cause text-order scrambling in roughly half of ATS engines.
 2. **No text boxes.** Many ATS parsers ignore text-box content entirely.
 3. **No images.** This includes logos, headshots, and icon bullets. ATS cannot read them and they bloat file size.
@@ -59,6 +59,6 @@ Do not stuff invisible white-text keywords. Some ATS detect this and reject. Mod
 ## Verifying the output
 
 After generation:
-- Open the DOCX in Word/Pages — make sure nothing is offset or hidden.
-- Try copy-paste-into-Notepad — if a bullet drops or text scrambles, the layout is too clever.
+- Open the DOCX in Word, Pages, or LibreOffice — make sure nothing is offset or hidden.
+- Try copy-pasting into a plain-text editor — if a bullet drops or text scrambles, the layout is too clever.
 - Check the .docx file size — if it's >100KB without images, something is bloated; investigate.
