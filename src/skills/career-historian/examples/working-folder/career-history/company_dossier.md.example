@@ -1,0 +1,71 @@
+---
+company: {Company Name}
+titles: {Title} ({YYYY-MM} - {YYYY-MM}); {Earlier Title} ({YYYY-MM} - {YYYY-MM})
+location: {city / remote}
+start: {YYYY-MM}
+end: {YYYY-MM or present}
+last_interviewed: {YYYY-MM-DD}
+status: in-progress
+---
+
+# {Company Name} — Career Dossier
+
+> One dossier per employer. The career-historian skill grows this file across interview sessions; the resume-tailor skill's refresh flow distills it into `master_profile.md` later. Every fact carries a `Source:` line — interview date or document name. `status` is `in-progress` until a gap-analysis pass comes back mostly empty, then `reviewed`.
+
+## Engagement context
+
+{One short paragraph: why the company hired you, what era of the company it was (growth scramble, post-acquisition integration, turnaround), and what your mandate actually turned out to be.}
+
+- Source: interview {YYYY-MM-DD}
+
+## Projects
+
+### {Project name}
+
+- **When:** {YYYY-MM} - {YYYY-MM}
+- **Role:** {what was specifically yours, vs. the team's}
+- **Problem:** {one sentence}
+- **What I did:** {actions, decisions, the user's verbs}
+- **Tech / methods:** {stack, tools, methodologies}
+- **Outcome & numbers:** {result with metrics; mark estimates: `~40% (user's recollection)`}
+- **Story notes:** {STAR material — an obstacle, a save, a decision under pressure}
+- **Source:** interview {YYYY-MM-DD}
+
+### {Another project}
+
+- (same shape)
+
+## Skills evidence
+
+> One row per skill, anchored to where it was exercised. A skill without evidence is just a keyword.
+
+| Skill | Evidence | Depth | Last used |
+| --- | --- | --- | --- |
+| {e.g. Azure architecture} | {project or anecdote, e.g. "Payment gateway migration — designed the landing zone"} | {daily driver / working knowledge / led others} | {YYYY} |
+
+## Contacts
+
+> Sensitive personal data — lives only here (or your vault), never in generated outputs.
+
+### {Contact name}
+
+- **Title then / now:** {their role when you worked together} / {where they are now, if known}
+- **Relationship:** {manager / peer / report / stakeholder / vendor}
+- **Worked together on:** {project or scope}
+- **Reference potential:** {yes / maybe / no} — {why}
+- **Contact info:** {email / phone / "LinkedIn lookup"}
+- **Source:** interview {YYYY-MM-DD}
+
+## Artifacts & sources ingested
+
+- {YYYY-MM-DD} — {resume_2019.docx} — {what was mined from it}
+
+## Open questions
+
+> Queued by the gap-analysis pass; the agenda for the next session. Check items off as they're answered (move the answer into the right section above).
+
+- [ ] ({YYYY-MM-DD}) {follow-up question}
+
+## Interview log
+
+- {YYYY-MM-DD} — {what was covered: "projects loop (3 added), skills loop (5 rows), gap analysis queued 7 questions"}

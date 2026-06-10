@@ -1,0 +1,6 @@
+{
+  "destination": {
+    "type": "local",
+    "path": "career-history"
+  }
+}
