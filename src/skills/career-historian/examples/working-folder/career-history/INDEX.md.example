@@ -1,0 +1,7 @@
+# Career history index
+
+> Maintained by the career-historian skill at the end of every session — one line per employer. This file always lives in the working folder even when dossiers live elsewhere (e.g. a notes vault over MCP): it's what resume-tailor's freshness check sees, so touching it is how new history becomes discoverable to tailoring runs.
+
+| Company | Dossier | Last interviewed | Open questions |
+| --- | --- | --- | --- |
+| {Company Name} | {career-history/company-name.md or vault://Career/Job History/Company Name} | {YYYY-MM-DD} | {N} |
