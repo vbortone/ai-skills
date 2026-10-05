@@ -1,0 +1,33 @@
+{
+  "model": "jev-1.13",
+  "review_confidence": 0.6,
+  "ignore_dates": {
+    "1980-01-01": "Example: a household member's birthday (not a document date)"
+  },
+  "recipients": {
+    "Alex": "Alex Example (also: Al, A. Example, Mr. Example when context implies Alex)",
+    "Sam": "Sam Example (also: Samantha Example, Mrs. Example, Ms. Example)",
+    "Household": "Both Alex and Sam, \"The Example Family\", or the household generally",
+    "Unknown": "Anyone else, or the recipient cannot be determined from the document"
+  },
+  "topics": {
+    "Financial": "Bank statements, account notices, general financial documents",
+    "Taxes": "Tax returns, W-2s, 1099s, IRS correspondence",
+    "Insurance": "Insurance policies, claims, EOBs (non-health, non-auto)",
+    "CreditCard": "Credit card statements, offers, notices",
+    "Health": "Medical bills, health insurance EOBs, lab results, prescriptions",
+    "Home": "Mortgage, property tax, home repairs, HOA",
+    "Auto": "Car insurance, registration, repairs, DMV",
+    "Ad": "Advertisements, promotional mailers, marketing",
+    "Legal": "Legal notices, contracts, court documents",
+    "Employment": "Pay stubs, offer letters, HR documents",
+    "Retirement": "401k, IRA, pension, Social Security",
+    "Investment": "Brokerage statements, stock/fund correspondence",
+    "Utility": "Electric, gas, water, phone, internet bills",
+    "Dining": "Restaurant receipts, food delivery, cafe charges",
+    "Bar": "Bar tabs, nightlife, alcohol-related receipts",
+    "Travel": "Flights, hotels, rental cars, vacation bookings, transportation",
+    "Shopping": "Retail purchases, online orders, general merchandise receipts",
+    "Other": "Anything that does not fit the other categories, or too unclear to tell"
+  }
+}

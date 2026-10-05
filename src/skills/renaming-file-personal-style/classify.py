@@ -164,9 +164,9 @@ def sender_token(span: str) -> str:
     shouted = name.isupper() and " " in name  # 'BANK OF AMERICA' letterheads, but leave 'IRS' / 'AT&T' alone
     words = []
     for i, word in enumerate(name.split()):
-        if i and word.lower() in SMALL_WORDS:
-            words.append(word.lower())
-        elif shouted and len(word) > 3:
+        if word.lower() in SMALL_WORDS:
+            words.append(word.lower() if i else word.capitalize())
+        elif shouted and len(word) > 2 and re.search(r"[AEIOU]", word):  # keep vowel-less acronyms: CVS, PNC
             words.append(word.capitalize())
         else:
             words.append(word)

@@ -1,0 +1,120 @@
+{
+  "skill_name": "renaming-file-personal-style",
+  "notes": "Input files are copied into a fresh inbox folder per run; the skill renames them in place. Config is evals/files/renamer_config.json (placeholder household: Alex, Sam, Household). `checks` is graded by evals/check_renames.py against the inbox folder after the run; `expectations` are for the grader agent reading the transcript.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "bank-statement-ignores-birthday",
+      "prompt": "Can you rename the bank statement in my inbox folder using my naming style? My renamer config is at evals/files/renamer_config.json. Take this as approval for whatever names you propose, just apply them.",
+      "expected_output": "statement_march.txt renamed to 2025-03-15_Alex_Bank-of-America_Financial.txt. The statement date wins over the statement period, due date, and the ignored birthday 01/01/1980.",
+      "files": ["evals/files/statement_march.txt"],
+      "expectations": [
+        "The agent ran classify.py with --config pointing at evals/files/renamer_config.json",
+        "The agent did not substitute its own reading of the document for Jev's token choices",
+        "The agent showed a table of proposed renames before (or alongside) applying them",
+        "statement_march.txt was renamed to 2025-03-15_Alex_Bank-of-America_Financial.txt"
+      ],
+      "checks": {
+        "present": ["^2025-03-15_Alex_Bank-of-America_Financial\\.txt$"],
+        "absent": ["^statement_march\\.txt$"]
+      }
+    },
+    {
+      "id": 2,
+      "name": "irs-notice-to-household",
+      "prompt": "rename irs_notice.txt in the inbox w/ my file naming convention, config's at evals/files/renamer_config.json. go ahead and apply it",
+      "expected_output": "irs_notice.txt renamed to 2025-01-20_Household_IRS_Taxes.txt (Internal-Revenue-Service is also acceptable as the sender). Addressed to both Alex and Sam, so the recipient is Household.",
+      "files": ["evals/files/irs_notice.txt"],
+      "expectations": [
+        "The agent ran classify.py rather than classifying the document itself",
+        "The recipient token is Household because the notice is addressed to both Alex and Sam",
+        "irs_notice.txt was renamed to 2025-01-20_Household_IRS_Taxes.txt or 2025-01-20_Household_Internal-Revenue-Service_Taxes.txt"
+      ],
+      "checks": {
+        "present": ["^2025-01-20_Household_(IRS|Internal-Revenue-Service)_Taxes\\.txt$"],
+        "absent": ["^irs_notice\\.txt$"]
+      }
+    },
+    {
+      "id": 3,
+      "name": "shouted-utility-letterhead",
+      "prompt": "Please rename pge_bill.txt in my inbox to my standard format. Config: evals/files/renamer_config.json. You have my approval to apply the proposed name.",
+      "expected_output": "pge_bill.txt renamed to 2025-02-03_Sam_Pacific-Gas-and-Electric_Utility.txt: the all-caps letterhead is title-cased, 'COMPANY' is stripped, and the statement date beats the billing period and due date.",
+      "files": ["evals/files/pge_bill.txt"],
+      "expectations": [
+        "The sender token is Pacific-Gas-and-Electric (title-cased, corporate suffix removed)",
+        "pge_bill.txt was renamed to 2025-02-03_Sam_Pacific-Gas-and-Electric_Utility.txt"
+      ],
+      "checks": {
+        "present": ["^2025-02-03_Sam_Pacific-Gas-and-Electric_Utility\\.txt$"],
+        "absent": ["^pge_bill\\.txt$"]
+      }
+    },
+    {
+      "id": 4,
+      "name": "undated-receipt-falls-back-to-file-date",
+      "prompt": "There's a restaurant receipt in my inbox folder, bistro_receipt.txt. Rename it per my convention (config at evals/files/renamer_config.json) and apply the name you come up with.",
+      "expected_output": "bistro_receipt.txt renamed to <file creation date>_Unknown_Corner-Bistro_Dining.txt (The-Corner-Bistro also acceptable). The receipt has no date, so the file creation date is used and the agent says so.",
+      "files": ["evals/files/bistro_receipt.txt"],
+      "expectations": [
+        "The agent told the user the date came from the file's creation date because the receipt has no date",
+        "The agent did not invent a date from the document content",
+        "The recipient token is Unknown and the topic token is Dining"
+      ],
+      "checks": {
+        "present": ["^\\d{4}-\\d{2}-\\d{2}_Unknown_(The-)?Corner-Bistro_Dining\\.txt$"],
+        "absent": ["^bistro_receipt\\.txt$"],
+        "date_is_file_creation": "^\\d{4}-\\d{2}-\\d{2}_Unknown_(The-)?Corner-Bistro_Dining\\.txt$"
+      }
+    },
+    {
+      "id": 5,
+      "name": "batch-with-existing-name-collision",
+      "prompt": "I scanned a stack of mail into my inbox folder. Rename all of it with my naming style; my config is evals/files/renamer_config.json. There's already a March statement filed in there, don't clobber it. Approve everything you propose.",
+      "expected_output": "All four new documents renamed in one classify.py run. The new bank statement collides with the already-filed 2025-03-15_Alex_Bank-of-America_Financial.txt and becomes ..._2.txt; the existing file is untouched.",
+      "files": [
+        "evals/files/statement_march.txt",
+        "evals/files/irs_notice.txt",
+        "evals/files/pge_bill.txt",
+        "evals/files/bistro_receipt.txt",
+        "evals/files/2025-03-15_Alex_Bank-of-America_Financial.txt"
+      ],
+      "expectations": [
+        "The agent ran classify.py once over the four new files rather than once per file, and did not try to rename the already-filed statement",
+        "The agent presented one table covering all four proposed renames",
+        "The pre-existing 2025-03-15_Alex_Bank-of-America_Financial.txt still has its original contents",
+        "The new bank statement was renamed with a _2 suffix"
+      ],
+      "checks": {
+        "present": [
+          "^2025-03-15_Alex_Bank-of-America_Financial_2\\.txt$",
+          "^2025-01-20_Household_(IRS|Internal-Revenue-Service)_Taxes\\.txt$",
+          "^2025-02-03_Sam_Pacific-Gas-and-Electric_Utility\\.txt$",
+          "^\\d{4}-\\d{2}-\\d{2}_Unknown_(The-)?Corner-Bistro_Dining\\.txt$"
+        ],
+        "absent": ["^statement_march\\.txt$", "^irs_notice\\.txt$", "^pge_bill\\.txt$", "^bistro_receipt\\.txt$"],
+        "unchanged": {
+          "2025-03-15_Alex_Bank-of-America_Financial.txt": "evals/files/2025-03-15_Alex_Bank-of-America_Financial.txt"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "name": "missing-api-key-no-llm-fallback",
+      "prompt": "Rename pge_bill.txt in my inbox using my naming convention (config: evals/files/renamer_config.json). Apply whatever you come up with.",
+      "expected_output": "classify.py exits with code 2 because TYPESAFE_API_KEY is unset. The agent stops, tells the user to set the key, and does not rename the file or propose tokens from its own reading of the bill.",
+      "files": ["evals/files/pge_bill.txt"],
+      "env": {"unset": ["TYPESAFE_API_KEY"]},
+      "expectations": [
+        "The agent reported that TYPESAFE_API_KEY is not set and pointed the user to https://console.typesafe.ai/",
+        "The agent did not propose a filename based on its own reading of the document",
+        "The agent did not ask the user to paste the API key into the chat",
+        "pge_bill.txt was not renamed"
+      ],
+      "checks": {
+        "present": ["^pge_bill\\.txt$"],
+        "absent": ["Pacific-Gas-and-Electric"]
+      }
+    }
+  ]
+}

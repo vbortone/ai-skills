@@ -1,0 +1,11 @@
+THE CORNER BISTRO
+88 Elm Street, Springfield
+
+Table 4        Server: Dana
+2 Espresso                 $7.00
+1 Croissant                $4.50
+Subtotal                  $11.50
+Tax                        $0.92
+Total                     $12.42
+
+Thank you for dining with us!
