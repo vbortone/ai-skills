@@ -85,6 +85,36 @@ def extract_text_file(path: str) -> str:
         return f.read().strip()
 
 
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".tiff", ".tif", ".bmp", ".webp"}
+TEXT_EXTENSIONS = {".txt", ".csv", ".md", ".html", ".htm", ".xml", ".json", ".rtf"}
+
+
+class UnsupportedFileType(ValueError):
+    """Raised when a file's extension has no extractor."""
+
+
+def extract(filepath: str) -> str:
+    """Extract text from any supported file. Raises on failure; returns "" when nothing was found."""
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext == ".pdf":
+        return extract_pdf(filepath)
+    if ext == ".docx":
+        return extract_docx(filepath)
+    if ext == ".doc":
+        print(
+            "Warning: .doc (legacy Word) format has limited support. "
+            "Consider converting to .docx for best results.",
+            file=sys.stderr,
+        )
+        # Attempt to read as docx — may fail for true .doc files
+        return extract_docx(filepath)
+    if ext in IMAGE_EXTENSIONS:
+        return extract_image(filepath)
+    if ext in TEXT_EXTENSIONS:
+        return extract_text_file(filepath)
+    raise UnsupportedFileType(f"Unsupported file type: {ext}")
+
+
 def truncate(text: str) -> str:
     """Truncate text to MAX_OUTPUT_CHARS with a notice."""
     if len(text) <= MAX_OUTPUT_CHARS:
@@ -102,31 +132,11 @@ def main() -> None:
         print(f"Error: File not found: {filepath}", file=sys.stderr)
         sys.exit(1)
 
-    ext = os.path.splitext(filepath)[1].lower()
-
-    image_extensions = {".jpg", ".jpeg", ".png", ".gif", ".tiff", ".tif", ".bmp", ".webp"}
-    text_extensions = {".txt", ".csv", ".md", ".html", ".htm", ".xml", ".json", ".rtf"}
-
     try:
-        if ext == ".pdf":
-            text = extract_pdf(filepath)
-        elif ext == ".docx":
-            text = extract_docx(filepath)
-        elif ext == ".doc":
-            print(
-                "Warning: .doc (legacy Word) format has limited support. "
-                "Consider converting to .docx for best results.",
-                file=sys.stderr,
-            )
-            # Attempt to read as docx — may fail for true .doc files
-            text = extract_docx(filepath)
-        elif ext in image_extensions:
-            text = extract_image(filepath)
-        elif ext in text_extensions:
-            text = extract_text_file(filepath)
-        else:
-            print(f"Error: Unsupported file type: {ext}", file=sys.stderr)
-            sys.exit(1)
+        text = extract(filepath)
+    except UnsupportedFileType as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"Error extracting text from {filepath}: {e}", file=sys.stderr)
         sys.exit(1)
