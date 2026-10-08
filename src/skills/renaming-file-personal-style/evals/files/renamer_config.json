@@ -1,5 +1,5 @@
 {
-  "model": "jev-1.13",
+  "model": "jev-latest",
   "review_confidence": 0.6,
   "ignore_dates": {
     "1980-01-01": "Example: a household member's birthday (not a document date)"

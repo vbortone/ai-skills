@@ -322,7 +322,7 @@ def main() -> None:
 
     results: list[dict] = []
     claimed: set[str] = set()
-    with TypeSafeClient(model=config.get("model", "jev-1.13"), timeout=60.0) as client:
+    with TypeSafeClient(model=config.get("model", "jev-latest"), timeout=60.0) as client:
         for path in args.files:
             if not os.path.isfile(path):
                 results.append({"file": path, "error": "file not found", "needs_review": True})
@@ -332,7 +332,7 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001 — API failure on one file shouldn't sink the batch
                 results.append({"file": path, "error": f"classification failed: {e}", "needs_review": True})
 
-    json.dump({"model": config.get("model", "jev-1.13"), "results": results}, sys.stdout, indent=2)
+    json.dump({"model": config.get("model", "jev-latest"), "results": results}, sys.stdout, indent=2)
     print()
 
 

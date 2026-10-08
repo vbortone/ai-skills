@@ -66,7 +66,7 @@ below, confirming with the user. Fields:
 | `recipients` | Recipient token → description Jev reads (names, nicknames, aliases). Keep an `Unknown` entry. |
 | `topics` | Topic token → description. Keep an `Other` entry. |
 | `ignore_dates` | ISO date → note. These are dropped before Jev sees the date candidates. |
-| `model` | TypeSafe model id (default `jev-1.13`). |
+| `model` | TypeSafe model id (default `jev-latest`). |
 | `review_confidence` | A token whose probability is below this is flagged `needs_review` (default `0.6`). |
 
 ---
