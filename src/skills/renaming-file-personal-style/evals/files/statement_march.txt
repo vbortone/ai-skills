@@ -1,0 +1,19 @@
+BANK OF AMERICA, N.A.
+P.O. Box 15284, Wilmington, DE 19850
+www.bankofamerica.com
+
+Alex Example
+12 Main Street
+Springfield, IL 62701
+
+Account Statement
+Statement Date: March 15, 2025
+Statement Period: 02/14/2025 - 03/14/2025
+Account holder date of birth: 01/01/1980
+
+Beginning balance      $4,210.55
+Deposits               $3,100.00
+Withdrawals            $2,450.12
+Ending balance         $4,860.43
+
+Payment on your linked credit line is due by 04/10/2025.
