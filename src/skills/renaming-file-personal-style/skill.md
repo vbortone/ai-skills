@@ -13,9 +13,11 @@ Rename files into the standardized format:
 
 **Example:** `2025-03-15_Vincent_Chase-Bank_Financial.pdf`
 
-**Classification is done by TypeSafe's Jev model, not by you.** `classify.py` finds candidate
-dates and sender names in code, asks Jev to pick among them (and to pick the recipient and
-topic from the user's configured lists), then normalizes the picks into filename tokens. Your
+**Classification is done by TypeSafe's Jev model, not by you.** For documents with a text
+layer, `classify.py` finds candidate dates and sender names in code and asks Jev to pick among
+them. Photos and scans go to Jev as an image of the first page, and Jev reads them directly;
+there is no local OCR. Jev also picks the recipient and topic from the user's configured lists,
+and code normalizes the picks into filename tokens. Your
 job is to run the script, show the proposals, surface anything Jev was unsure about, and carry
 out the renames the user approves. Do not read the documents and substitute your own token
 choices. When a token is flagged for review, show Jev's alternatives and let the user decide.
@@ -24,10 +26,10 @@ choices. When a token is flagged for review, show Jev's alternatives and let the
 
 ## Prerequisites — Check on First Run
 
-Before extracting text, verify dependencies are installed. Run this check:
+Before classifying, verify dependencies are installed. Run this check:
 
 ```bash
-python -c "import fitz; import docx; import pdfplumber; import pytesseract; from PIL import Image; from pdf2image import convert_from_path; import typesafe_sdk"
+python -c "import pymupdf; import docx; import typesafe_sdk"
 ```
 
 If it fails, install Python packages:
@@ -38,18 +40,8 @@ pip install -r "<SKILL_DIR>/requirements.txt"
 
 Where `<SKILL_DIR>` is the directory containing this skill (alongside `extract_text.py`).
 
-**External dependencies** (needed for OCR of images and scanned PDFs):
-
-- **Tesseract OCR**: The `pytesseract` package requires the Tesseract engine.
-  - macOS: `brew install tesseract`
-  - Linux (Debian/Ubuntu): `sudo apt-get install tesseract-ocr`
-  - Windows: `choco install tesseract` or download from the UB Mannheim Tesseract GitHub releases page and add to PATH.
-- **Poppler**: The `pdf2image` package requires Poppler utilities.
-  - macOS: `brew install poppler`
-  - Linux (Debian/Ubuntu): `sudo apt-get install poppler-utils`
-  - Windows: `choco install poppler` or download binaries and add to PATH.
-
-If the user only needs to process text-based PDFs and DOCX files, Tesseract and Poppler are not required.
+No system packages are needed. There is no local OCR (no Tesseract, no Poppler): scans and
+photos are rendered with PyMuPDF and read by Jev, so the skill runs anywhere pip does.
 
 **TypeSafe API key:** `classify.py` calls the TypeSafe API and needs `TYPESAFE_API_KEY` set in
 the environment. If it is missing, the script exits with code 2. Ask the user to create a key at
@@ -65,7 +57,8 @@ below, confirming with the user. Fields:
 |-------|---------|
 | `recipients` | Recipient token → description Jev reads (names, nicknames, aliases). Keep an `Unknown` entry. |
 | `topics` | Topic token → description. Keep an `Other` entry. |
-| `ignore_dates` | ISO date → note. These are dropped before Jev sees the date candidates. |
+| `ignore_dates` | ISO date → note. Never used as a document date, in text or image mode. |
+| `known_senders` | Sender names Jev may pick for photos and scans (optional). Jev picks answers rather than writing them, so for an image it can only choose a sender from this list plus the senders found by `--sender-history`. |
 | `model` | TypeSafe model id (default `jev-latest`). |
 | `review_confidence` | A token whose probability is below this is flagged `needs_review` (default `0.6`). |
 
@@ -82,21 +75,34 @@ Confirm each file path exists using the Bash tool (`ls "<path>"`). Report any mi
 Run the classifier once over all the files:
 
 ```bash
-python "<SKILL_DIR>/classify.py" --config "<working_folder>/renamer_config.json" "<file_1>" "<file_2>" ...
+python "<SKILL_DIR>/classify.py" --config "<working_folder>/renamer_config.json" \
+    --sender-history "<folder of already-renamed files>" "<file_1>" "<file_2>" ...
 ```
 
-It extracts text (via `extract_text.py`: PDFs including scanned ones, DOCX, images by OCR,
-plain text), sends one Jev request per file, and prints one JSON object:
+Pass `--sender-history` (repeatable) pointing at where the user keeps already-renamed paperwork;
+the senders in those names become the choices Jev has for photos and scans. Ask the user once
+where that is if you don't know.
+
+Each file is read one of two ways, then sent to Jev in one request:
+
+- **Text mode** (PDFs with a text layer, DOCX, plain text): `extract_text.py` reads the text.
+- **Image mode** (JPG/PNG/TIFF/etc. photos, and PDFs without a text layer): the first page is
+  rendered to a JPEG and Jev reads it. The date comes back as year, month, and day picks. A
+  sender not in the known list comes back `Unknown` with `source: not_found`; ask the user for it.
+
+It prints one JSON object:
 
 - `results[].proposed_name` / `proposed_path`: the full new name, with a `_2`, `_3` suffix
   already added if the name is taken on disk or earlier in the batch.
 - `results[].tokens.{date,recipient,sender,topic}`: each has `value`, `source`
   (`jev`, `file_created` for the date fallback, or `not_found` when no sender candidate fit),
   `probability`, `confidence`, `alternatives` (Jev's runner-up values), and `needs_review`.
+- `results[].mode`: `text` or `image`.
 - `results[].needs_review`: true if any token was flagged.
 - `results[].error`: set when extraction or the API call failed for that file. The rest of the batch still runs.
 
-To debug a single file's extracted text, run `python "<SKILL_DIR>/extract_text.py" "<file_path>"`.
+To debug a single file, run `python "<SKILL_DIR>/extract_text.py" "<file_path>"` for its text
+layer, or add `--render out.jpg` to see the image Jev would read.
 
 ### Step 3: Confirm with User
 
@@ -167,9 +173,10 @@ Determine who the document is addressed to or pertains to. Use exactly one of th
 
 ### 3. Sender
 
-The company or person who sent the document. Code proposes candidates (capitalized name phrases
-from the letterhead and footer, plus web and email domains), Jev picks one, and code normalizes it
-into the rules below.
+The company or person who sent the document. In text mode, code proposes candidates (capitalized
+name phrases from the letterhead and footer, plus web and email domains), Jev picks one, and code
+normalizes it into the rules below. In image mode, Jev picks from the known senders
+(`known_senders` plus `--sender-history`), already in filename form.
 
 - **Company name takes priority** over an individual person's name when both appear.
 - **Replace spaces with dashes** (e.g., "Bank of America" → `Bank-of-America`).
@@ -214,7 +221,7 @@ Keep the original file extension exactly as-is (case-sensitive).
 ## Error Handling
 
 - If Python dependencies are missing, install them automatically (see Prerequisites).
-- If Tesseract or Poppler are missing and needed, inform the user and provide installation instructions.
+- Never install or run local OCR (Tesseract, etc.) for scans or photos; `classify.py` sends them to Jev as images.
 - If `TYPESAFE_API_KEY` is not set or `typesafe-sdk` is missing, `classify.py` exits with code 2. Fix the prerequisite; don't fall back to classifying the documents yourself.
 - If a file cannot be read or extracted, or its Jev request fails, `classify.py` reports it in `results[].error`. Report the error and ask the user for the tokens or skip the file.
 - If the new filename already exists, append `_2`, `_3`, etc. before the extension.
