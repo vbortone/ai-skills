@@ -74,8 +74,8 @@ DATE_PATTERNS = [
     (re.compile(r"\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4}|\d{2})\b"), ("m", "d", "y")),
     # March 15, 2025 / Mar. 15th 2025
     (re.compile(rf"\b({_MONTH_RE})\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?,?\s+(\d{{4}})\b", re.I), ("mon", "d", "y")),
-    # 15 March 2025
-    (re.compile(rf"\b(\d{{1,2}})\s+({_MONTH_RE})\.?,?\s+(\d{{4}})\b", re.I), ("d", "mon", "y")),
+    # 15 March 2025 / 24th March 2026
+    (re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+({_MONTH_RE})\.?,?\s+(\d{{4}})\b", re.I), ("d", "mon", "y")),
 ]
 
 

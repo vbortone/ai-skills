@@ -60,6 +60,8 @@ TRUTH = {
                            "sender": "THE CORNER BISTRO", "sender_token": "The-Corner-Bistro",
                            "recipient": "Unknown", "topic": "Dining"},
 }
+EXTRA_DATES = {"24th March 2026": "2026-03-24", "1 May 2025": "2025-05-01", "Mar. 3rd 2025": "2025-03-03",
+               "8/6/2025": "2025-08-06", "APR 4, 2026": "2026-04-04", "2025-12-31": "2025-12-31"}
 EXTRA_SENDER_TOKENS = {"irs.gov": "IRS", "bankofamerica.com": "Bankofamerica", "Chase Bank USA, N.A.": "Chase-Bank-USA",
                        "Verizon Wireless Inc.": "Verizon-Wireless", "AT&T": "AT&T", "US TREASURY": "US-Treasury",
                        "Joe_Smith: Plumbing": "Joe-Smith-Plumbing", "CVS PHARMACY": "CVS-Pharmacy",
@@ -113,6 +115,10 @@ def unit_checks() -> list[dict]:
         token = classify.sender_token(truth["sender"])
         out.append(result(f"{name}: '{truth['sender']}' normalizes to {truth['sender_token']}",
                           token == truth["sender_token"], f"got {token}"))
+    for span, expected in EXTRA_DATES.items():
+        found = classify.find_dates(f"Issued {span}.", set())
+        out.append(result(f"'{span}' is a date candidate parsed as {expected}", found.get(span) == expected,
+                          f"candidates {found}"))
     for span, expected in EXTRA_SENDER_TOKENS.items():
         token = classify.sender_token(span)
         out.append(result(f"'{span}' normalizes to {expected}", token == expected, f"got {token}"))

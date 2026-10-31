@@ -18,9 +18,11 @@ MAX_OUTPUT_CHARS = 10000
 
 def extract_pdf(path: str) -> str:
     """Extract text from PDF. Falls back to OCR for image-only pages."""
-    import fitz  # pymupdf
+    # Import as `pymupdf`: the legacy `fitz` alias prints a deprecation warning to stdout,
+    # which corrupts the JSON that classify.py writes there.
+    import pymupdf
 
-    doc = fitz.open(path)
+    doc = pymupdf.open(path)
     text_parts: list[str] = []
     ocr_pages: list[int] = []
 
