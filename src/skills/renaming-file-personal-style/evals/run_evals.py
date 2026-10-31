@@ -14,7 +14,10 @@ Modes:
              eval of Jev's actual picks. Evals with `env.unset` run with those variables removed.
 
 Usage:
-    python run_evals.py --mode offline|live [--eval-id N ...] [--keep <dir>]
+    python run_evals.py --mode offline|live [--eval-id N ...] [--keep <dir>] [--env-file <path>]
+
+Secrets: before running, the runner loads KEY=VALUE lines from evals/.env (gitignored; copy
+evals/.env.example) or from --env-file. Variables already set in the environment win.
 
 Output: one JSON object on stdout: {"mode", "passed", "failed", "skipped", "unit_checks", "evals"}.
 Exit codes: 0 everything passed (skips allowed), 1 a check failed, 2 usage error.
@@ -61,6 +64,26 @@ EXTRA_SENDER_TOKENS = {"irs.gov": "IRS", "bankofamerica.com": "Bankofamerica", "
                        "Verizon Wireless Inc.": "Verizon-Wireless", "AT&T": "AT&T", "US TREASURY": "US-Treasury",
                        "Joe_Smith: Plumbing": "Joe-Smith-Plumbing", "CVS PHARMACY": "CVS-Pharmacy",
                        "PNC BANK, N.A.": "PNC-Bank", "THE HOME DEPOT": "The-Home-Depot"}
+
+
+def load_env_file(path: str) -> list[str]:
+    """Set KEY=VALUE pairs from a dotenv-style file without overriding the real environment.
+
+    Returns the names it set. Missing file is fine: offline mode needs no secrets."""
+    loaded = []
+    if not os.path.isfile(path):
+        return loaded
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.removeprefix("export ").split("=", 1)
+            key, value = key.strip(), value.strip().strip('"').strip("'")
+            if key and value and not os.environ.get(key, "").strip():
+                os.environ[key] = value
+                loaded.append(key)
+    return loaded
 
 
 def result(text: str, passed: bool, evidence: str) -> dict:
@@ -165,7 +188,10 @@ def main() -> None:
     parser.add_argument("--mode", choices=["offline", "live"], required=True)
     parser.add_argument("--eval-id", type=int, action="append", help="run only these ids (repeatable)")
     parser.add_argument("--keep", help="copy each finished inbox here for inspection")
+    parser.add_argument("--env-file", default=os.path.join(EVALS_DIR, ".env"),
+                        help="dotenv file with TYPESAFE_API_KEY (default: evals/.env)")
     args = parser.parse_args()
+    env_loaded = load_env_file(args.env_file)
 
     with open(os.path.join(EVALS_DIR, "evals.json"), encoding="utf-8") as f:
         evals = json.load(f)["evals"]
@@ -180,6 +206,7 @@ def main() -> None:
     failed = sum(not u["passed"] for u in units) + sum(r.get("passed") is False for r in runs)
     report = {
         "mode": args.mode,
+        "env_loaded": env_loaded,
         "passed": sum(u["passed"] for u in units) + sum(r.get("passed") is True for r in runs),
         "failed": failed,
         "skipped": [r["id"] for r in runs if r["status"] == "skipped"],

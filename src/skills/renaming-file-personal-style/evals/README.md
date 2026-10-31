@@ -25,6 +25,11 @@ Each eval has two kinds of assertions:
 
 Install deps first (`pip install -r ../requirements.txt`).
 
+**API key:** copy `evals/.env.example` to `evals/.env` and set `TYPESAFE_API_KEY`. The runner
+loads it on startup (or from `--env-file <path>`), and a variable already in your environment
+takes precedence. `.env` is gitignored; never commit a real key. The report's `env_loaded`
+field lists which variables came from the file.
+
 **Offline (no API key, deterministic):** unit checks on date and sender candidate finding and
 sender normalization, then evals 1–5 run through the full pipeline with a stub that answers like
 a correct Jev. This catches regressions in code and graders but says nothing about Jev's judgment.
@@ -34,7 +39,7 @@ python evals/run_evals.py --mode offline
 ```
 
 **Live, script level (real Jev):** runs the real `classify.py` CLI against TypeSafe, applies the
-proposals, and grades. Evals without a key are skipped; eval 6 always runs with the key unset.
+proposals, and grades. If no key is found, the key-dependent evals are skipped; eval 6 always runs with the key unset.
 
 ```bash
 python evals/run_evals.py --mode live [--eval-id 3] [--keep ./eval-inboxes]
