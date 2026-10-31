@@ -433,3 +433,9 @@ pyrightconfig.json
 claude_logs/
 settings.local.json
 CLAUDE.local.md
+
+# Personal renamer config (the placeholder template in examples/ stays tracked)
+src/skills/renaming-file-personal-style/renamer_config.json
+
+# skill-creator eval run output
+*-workspace/

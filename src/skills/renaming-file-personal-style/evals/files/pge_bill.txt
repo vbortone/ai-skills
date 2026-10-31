@@ -1,0 +1,14 @@
+PACIFIC GAS AND ELECTRIC COMPANY
+Box 997300, Sacramento, CA 95899-7300
+pge.com
+
+ENERGY STATEMENT
+Statement Date: 02/03/2025
+Service For: SAM EXAMPLE
+Service address: 40 Oak Lane, Springfield, IL 62701
+
+Billing period: 12/30/2024 - 01/29/2025
+Electric charges            $96.18
+Gas charges                 $54.40
+Total amount due           $150.58
+Due Date: 02/24/2025
