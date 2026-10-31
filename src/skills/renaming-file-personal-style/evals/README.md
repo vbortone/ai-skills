@@ -48,6 +48,22 @@ python evals/run_evals.py --mode live [--eval-id 3] [--keep ./eval-inboxes]
 Both print one JSON report and exit 0 only if every check passed. Each proposal includes the
 per-token probabilities, which helps tune `review_confidence`.
 
+**Tuning `review_confidence` on real paperwork:** files the user already renamed by hand are
+labeled data. `calibrate_threshold.py` samples them, classifies a copy of each under a neutral name
+(so Jev can't read the answer from the file name; originals are never touched), compares every
+token with the hand-picked name, and reports per threshold how much gets flagged and how many
+auto-accepted tokens are wrong. Point it at the user's config and archive, never at repo fixtures:
+
+```bash
+python evals/calibrate_threshold.py --config <working_folder>/renamer_config.json \
+    "<archive folder>" [--sample 40] [--thresholds 0.5,0.6,0.7,0.8,0.9] [--details] > calib.json
+```
+
+Each sampled file is one API call. The report names the user's files, so keep it out of the repo.
+Read `thresholds[].file.accepted_wrong` next to `review_rate`. If wrong picks still get accepted at
+high thresholds, look at `--details`: the gap is a naming preference or a candidate the code
+missed, and a higher threshold won't fix either.
+
 **Agent level (Claude following SKILL.md):** use the skill-creator workflow. Spawn one subagent
 per eval with the skill path and the eval's prompt, copying the eval's `files` into a fresh
 inbox folder, and unsetting any `env.unset` variables for that run. Results go in
