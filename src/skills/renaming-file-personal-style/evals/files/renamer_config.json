@@ -4,6 +4,15 @@
   "ignore_dates": {
     "1980-01-01": "Example: a household member's birthday (not a document date)"
   },
+  "known_senders": [
+    "Aetna",
+    "Progressive",
+    "Bank of America",
+    "Internal Revenue Service",
+    "Pacific Gas and Electric",
+    "Chase",
+    "Verizon"
+  ],
   "recipients": {
     "Alex": "Alex Example (also: Al, A. Example, Mr. Example when context implies Alex)",
     "Sam": "Sam Example (also: Samantha Example, Mrs. Example, Ms. Example)",

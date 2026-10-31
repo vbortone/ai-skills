@@ -15,6 +15,10 @@ For each candidate threshold it reports, per token and per file:
 
 Pick the lowest threshold whose accepted_wrong you can live with.
 
+Scans and photos go to Jev as images, and their sender is picked from known senders: the config's
+`known_senders` plus every sender in the labeled folders. A sender that appears only on the file
+being scored is left out for that file, as production wouldn't have seen it yet.
+
 Usage:
     python calibrate_threshold.py --config <renamer_config.json> <dir_or_file> [...]
         [--sample N] [--seed S] [--thresholds 0.5,0.6,...] [--details] [--env-file <path>]
@@ -48,7 +52,7 @@ import classify  # noqa: E402
 from run_evals import load_env_file  # noqa: E402
 
 LABEL_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_([^_]+)_([^_]+)_([^_.]+)(?:_\d+)?(\.[A-Za-z0-9]+)$")
-EXTENSIONS = {".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg", ".tif", ".tiff"}
+EXTENSIONS = {".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".bmp"}
 TOKENS = ("date", "recipient", "sender", "topic")
 DEFAULT_THRESHOLDS = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
 # Most useful threshold: the lowest one that keeps file-level accepted accuracy at or above this.
@@ -144,16 +148,23 @@ def main() -> None:
         sys.exit(1)
     sample = random.Random(args.seed).sample(labeled, min(args.sample, len(labeled)))
 
+    known = classify.known_senders(config, args.paths)
+    seen: dict[str, int] = {}
+    for _, label in labeled:
+        seen[label["sender"]] = seen.get(label["sender"], 0) + 1
+
     rows, errors = [], []
     model = config.get("model", "jev-latest")
     work = tempfile.mkdtemp(prefix="rename-calibrate-")
     try:
-        with TypeSafeClient(model=model, timeout=60.0) as client:
+        with TypeSafeClient(model=model, timeout=60.0, headers=classify.IMAGE_HEADERS) as client:
             for i, (path, label) in enumerate(sample, 1):
                 copy = os.path.join(work, f"doc_{i:04d}{os.path.splitext(path)[1].lower()}")
                 shutil.copyfile(path, copy)
                 try:
-                    r = classify.classify_file(client, copy, config, set())
+                    unseen = seen.get(label["sender"], 0) <= 1 and label["sender"] not in config.get("known_senders", [])
+                    file_known = {k: v for k, v in known.items() if not (unseen and v == label["sender"])}
+                    r = classify.classify_file(client, copy, config, set(), file_known)
                 except Exception as e:  # noqa: BLE001 — one API failure shouldn't sink the run
                     r = {"error": f"classification failed: {e}"}
                 finally:
@@ -164,7 +175,7 @@ def main() -> None:
                 toks = r["tokens"]
                 if toks["date"]["source"] == "file_created":  # the copy is brand new; production would use the original's date
                     toks["date"]["value"] = classify.file_creation_date(path)
-                rows.append({"file": path, "label": label, "tokens": toks,
+                rows.append({"file": path, "mode": r["mode"], "label": label, "tokens": toks,
                              "match": {k: same(k, toks[k]["value"], label[k]) for k in TOKENS}})
                 print(f"[{i}/{len(sample)}] {os.path.basename(path)}", file=sys.stderr)
     finally:
@@ -186,13 +197,16 @@ def main() -> None:
         "scored": len(rows),
         "errors": errors,
         "token_accuracy": {k: round(sum(r["match"][k] for r in rows) / len(rows), 3) for k in TOKENS},
+        "token_accuracy_by_mode": {
+            mode: {"files": len(sub), **{k: round(sum(r["match"][k] for r in sub) / len(sub), 3) for k in TOKENS}}
+            for mode in ("text", "image") if (sub := [r for r in rows if r["mode"] == mode])},
         "thresholds": table,
         "suggested": {"threshold": min(good) if good else None,
                       "rule": f"lowest threshold with file-level accepted_acc >= {TARGET_ACCEPTED_ACC}"},
     }
     if args.details:
         report["files"] = [
-            {"file": r["file"], "label": r["label"],
+            {"file": r["file"], "mode": r["mode"], "label": r["label"],
              "picked": {k: {"value": r["tokens"][k]["value"], "probability": r["tokens"][k]["probability"],
                             "source": r["tokens"][k]["source"]} for k in TOKENS},
              "mismatches": [k for k in TOKENS if not r["match"][k]]}

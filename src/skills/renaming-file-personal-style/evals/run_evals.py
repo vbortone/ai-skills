@@ -60,6 +60,11 @@ TRUTH = {
                            "sender": "THE CORNER BISTRO", "sender_token": "The-Corner-Bistro",
                            "recipient": "Unknown", "topic": "Dining"},
 }
+# Image-mode fixtures: no text layer, so Jev reads the page image and picks the sender from known_senders.
+IMAGE_TRUTH = {
+    "scanned_eob.jpg": {"date_iso": "2025-05-02", "sender": "Aetna", "recipient": "Sam", "topic": "Health"},
+    "scanned_auto_renewal.pdf": {"date_iso": "2025-06-10", "sender": "Progressive", "recipient": "Alex", "topic": "Auto"},
+}
 EXTRA_DATES = {"24th March 2026": "2026-03-24", "1 May 2025": "2025-05-01", "Mar. 3rd 2025": "2025-03-03",
                "8/6/2025": "2025-08-06", "APR 4, 2026": "2026-04-04", "2025-12-31": "2025-12-31"}
 EXTRA_SENDER_TOKENS = {"irs.gov": "IRS", "bankofamerica.com": "Bankofamerica", "Chase Bank USA, N.A.": "Chase-Bank-USA",
@@ -115,6 +120,38 @@ def unit_checks() -> list[dict]:
         token = classify.sender_token(truth["sender"])
         out.append(result(f"{name}: '{truth['sender']}' normalizes to {truth['sender_token']}",
                           token == truth["sender_token"], f"got {token}"))
+    known = classify.known_senders(config, [])
+    for name, truth in IMAGE_TRUTH.items():
+        path = os.path.join(EVALS_DIR, "files", name)
+        text = classify.extract(path)
+        out.append(result(f"{name}: no text layer, so it goes to Jev as an image",
+                          classify.needs_image(path, text), f"{len(text)} chars of text"))
+        jpeg = classify.render_first_page(path)
+        out.append(result(f"{name}: first page renders to a JPEG", jpeg[:3] == b"\xff\xd8\xff", f"{len(jpeg)} bytes"))
+        out.append(result(f"{name}: sender '{truth['sender']}' is offered from known_senders",
+                          truth["sender"] in known.values(), f"known {sorted(known.values())}"))
+    import extract_text
+    import pymupdf
+
+    with tempfile.TemporaryDirectory() as shapes:
+        # Jev rejects sides outside [~275, 1568] px: long receipts, tiny crops, wide scans, and huge photos.
+        for w, h in ((466, 2803), (90, 120), (3000, 400), (4032, 3024), (612, 792)):
+            path = os.path.join(shapes, f"shape_{w}x{h}.png")
+            pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, w, h), False)
+            pix.clear_with(255)
+            pix.save(path)
+            out_pix = pymupdf.Pixmap(classify.render_first_page(path))
+            sides = (out_pix.width, out_pix.height)
+            out.append(result(f"a {w}x{h} image renders within Jev's size limits",
+                              extract_text.RENDER_MIN_SIDE <= min(sides) and max(sides) <= extract_text.RENDER_MAX_SIDE,
+                              f"rendered {sides[0]}x{sides[1]}"))
+    with tempfile.TemporaryDirectory() as history:
+        for n in ("2025-01-02_Alex_Citi_CreditCard.pdf", "2025-02-02_Sam_Citi_CreditCard_2.pdf",
+                  "2025-03-03_Alex_Unknown_Other.txt", "notes.txt"):
+            open(os.path.join(history, n), "w").close()
+        learned = classify.known_senders({}, [history])
+        out.append(result("--sender-history learns senders from already-named files, skipping Unknown",
+                          learned == {"Citi": "Citi"}, f"got {learned}"))
     for span, expected in EXTRA_DATES.items():
         found = classify.find_dates(f"Issued {span}.", set())
         out.append(result(f"'{span}' is a date candidate parsed as {expected}", found.get(span) == expected,
@@ -131,7 +168,13 @@ class StubJev:
     def system_one(self, state, questions):
         from typesafe_sdk import SystemOneResponse
 
-        truth = TRUTH[state["file_name"]]
+        name = state["file_name"]
+        if name in IMAGE_TRUTH:
+            truth = dict(IMAGE_TRUTH[name])
+            truth["date_year"], truth["date_month"], truth["date_day"] = truth["date_iso"].split("-")
+            truth["sender"] = truth["sender"].replace("-", " ")  # option labels use spaces
+        else:
+            truth = TRUTH[name]
         answers = {}
         for qid, question in questions.items():
             options = list(question.criteria)
@@ -145,7 +188,8 @@ class StubJev:
 
 def classify_offline(paths: list[str]) -> tuple[int, dict]:
     config, claimed, client = classify.load_config(CONFIG), set(), StubJev()
-    return 0, {"model": "stub-jev", "results": [classify.classify_file(client, p, config, claimed) for p in paths]}
+    known = classify.known_senders(config, [])
+    return 0, {"model": "stub-jev", "results": [classify.classify_file(client, p, config, claimed, known) for p in paths]}
 
 
 def classify_live(paths: list[str], unset: list[str]) -> tuple[int, dict | None]:
@@ -173,7 +217,7 @@ def run_eval(eval_def: dict, mode: str, keep: str | None) -> dict:
         expectations = [result(f"classify.py exits {2 if unset else 0}", code == (2 if unset else 0), f"exit {code}")]
         proposals = []
         for r in (output or {}).get("results", []):
-            proposals.append({"file": os.path.basename(r["file"]), "proposed": r.get("proposed_name"),
+            proposals.append({"file": os.path.basename(r["file"]), "mode": r.get("mode"), "proposed": r.get("proposed_name"),
                               "needs_review": r.get("needs_review"), "error": r.get("error"),
                               "tokens": {k: {"value": t["value"], "probability": t["probability"]}
                                          for k, t in (r.get("tokens") or {}).items()}})

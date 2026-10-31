@@ -115,6 +115,38 @@
         "present": ["^pge_bill\\.txt$"],
         "absent": ["Pacific-Gas-and-Electric"]
       }
+    },
+    {
+      "id": 7,
+      "name": "photo-read-by-jev-not-ocr",
+      "prompt": "I snapped a photo of an insurance letter, scanned_eob.jpg, it's in my inbox. Rename it with my convention (config at evals/files/renamer_config.json) and go ahead and apply it.",
+      "expected_output": "scanned_eob.jpg renamed to 2025-05-02_Sam_Aetna_Health.jpg. The photo has no text layer, so classify.py sends it to Jev as an image (mode: image). Jev reads the statement date, not the service date or the ignored 01/01/1980 birthday, and picks Aetna from the config's known_senders.",
+      "files": ["evals/files/scanned_eob.jpg"],
+      "expectations": [
+        "The agent ran classify.py and did not try to install or run Tesseract or any other local OCR",
+        "classify.py reported mode \"image\" for scanned_eob.jpg",
+        "scanned_eob.jpg was renamed to 2025-05-02_Sam_Aetna_Health.jpg"
+      ],
+      "checks": {
+        "present": ["^2025-05-02_Sam_Aetna_Health\\.jpg$"],
+        "absent": ["^scanned_eob\\.jpg$"]
+      }
+    },
+    {
+      "id": 8,
+      "name": "scanned-pdf-without-text-layer",
+      "prompt": "rename scanned_auto_renewal.pdf in the inbox per my naming style. config: evals/files/renamer_config.json. approved, just apply",
+      "expected_output": "scanned_auto_renewal.pdf renamed to 2025-06-10_Alex_Progressive_Auto.pdf. The PDF holds only a page image, so its first page goes to Jev as an image. The letter date beats the renewal and due dates.",
+      "files": ["evals/files/scanned_auto_renewal.pdf"],
+      "expectations": [
+        "classify.py reported mode \"image\" for scanned_auto_renewal.pdf",
+        "The date token is the letter date 2025-06-10, not the renewal date or the payment due date",
+        "scanned_auto_renewal.pdf was renamed to 2025-06-10_Alex_Progressive_Auto.pdf"
+      ],
+      "checks": {
+        "present": ["^2025-06-10_Alex_Progressive_Auto\\.pdf$"],
+        "absent": ["^scanned_auto_renewal\\.pdf$"]
+      }
     }
   ]
 }
