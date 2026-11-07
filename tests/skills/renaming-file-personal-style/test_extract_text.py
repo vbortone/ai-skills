@@ -9,7 +9,7 @@ import pytest
 
 # Add the skill directory to the path so we can import the module directly
 SKILL_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "src", "skills", "renaming-file-personal-style")
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "skills", "renaming-file-personal-style")
 )
 sys.path.insert(0, SKILL_DIR)
 
@@ -38,7 +38,7 @@ if HAS_TESSERACT and not shutil.which("tesseract"):
 class TestPdfExtraction:
     def test_extracts_text_from_pdf(self):
         text = extract_text.extract_pdf(os.path.join(FIXTURES, "sample.pdf"))
-        assert "Jennifer Bortone" in text
+        assert "Sam Example" in text
         assert "Bank of America" in text
 
     def test_pdf_contains_date(self):
@@ -53,7 +53,7 @@ class TestPdfExtraction:
 class TestDocxExtraction:
     def test_extracts_text_from_docx(self):
         text = extract_text.extract_docx(os.path.join(FIXTURES, "sample.docx"))
-        assert "Vincent and Jennifer Bortone" in text
+        assert "Alex and Sam Example" in text
         assert "Internal Revenue Service" in text
 
     def test_docx_contains_date(self):
@@ -72,7 +72,7 @@ class TestDocxExtraction:
 class TestPlainTextExtraction:
     def test_extracts_text_from_txt(self):
         text = extract_text.extract_text_file(os.path.join(FIXTURES, "sample.txt"))
-        assert "Vincent Bortone" in text
+        assert "Alex Example" in text
         assert "Chase Bank" in text
 
     def test_extracts_text_from_csv(self):
@@ -90,7 +90,7 @@ class TestImageExtraction:
         text = extract_text.extract_image(os.path.join(FIXTURES, "sample.png"))
         # OCR may not be perfect, check for key fragments
         text_lower = text.lower()
-        assert "margaret" in text_lower or "invoice" in text_lower
+        assert "pat example" in text_lower or "invoice" in text_lower
 
 
 # ---------------------------------------------------------------------------

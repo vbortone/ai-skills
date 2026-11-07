@@ -1,9 +1,9 @@
 ---
 name: renaming-file-personal-style
-description: Rename documents into the standardized Bortone family file naming format, using TypeSafe's Jev model to classify each document's date, recipient, sender, and topic. Use when the user asks to rename files, documents, or organize household paperwork.
+description: Rename household documents into a standardized `{Date}_{Recipient}_{Sender}_{Topic}` file naming format, using TypeSafe's Jev model to classify each document's date, recipient, sender, and topic. Use when the user asks to rename files, documents, or organize household paperwork.
 ---
 
-# Bortone File Renamer
+# Household File Renamer
 
 Rename files into the standardized format:
 
@@ -11,7 +11,7 @@ Rename files into the standardized format:
 {Date}_{Recipient}_{Sender}_{Topic}.{ext}
 ```
 
-**Example:** `2025-03-15_Vincent_Chase-Bank_Financial.pdf`
+**Example:** `2025-03-15_Alex_Chase-Bank_Financial.pdf`
 
 **Classification is done by TypeSafe's Jev model, not by you.** For documents with a text
 layer, `classify.py` finds candidate dates and sender names in code and asks Jev to pick among
@@ -50,8 +50,9 @@ https://console.typesafe.ai/ and set it. Never ask them to paste the key into th
 **Classifier config (`renamer_config.json`):** the user's recipients, topics, and
 ignored biographical dates live in a config file in **their** working folder, never in this
 skill folder. If they don't have one yet, copy `<SKILL_DIR>/examples/renamer_config.json` to
-their working folder and replace the placeholder entries with the values from the Token Rules
-below, confirming with the user. Fields:
+their working folder and replace the placeholder entries (the `Alex` / `Sam` / `Household`
+example household) with the user's own people, nicknames, and dates to ignore, asking the user
+for each. Fields:
 
 | Field | Meaning |
 |-------|---------|
@@ -110,8 +111,8 @@ Present a table of proposed renames. Mark flagged tokens and list Jev's alternat
 
 | # | Original File | Proposed Name | Review |
 |---|---------------|---------------|--------|
-| 1 | statement.pdf | 2025-03-15_Vincent_Chase-Bank_Financial.pdf | |
-| 2 | letter.docx   | 2025-01-20_Bortone_IRS_Taxes.docx | sender 0.48 (alt: US-Treasury 0.41) |
+| 1 | statement.pdf | 2025-03-15_Alex_Chase-Bank_Financial.pdf | |
+| 2 | letter.docx   | 2025-01-20_Household_IRS_Taxes.docx | sender 0.48 (alt: US-Treasury 0.41) |
 | 3 | scan.jpg      | 2024-11-02_Unknown_Unknown_Other.jpg | date from file creation; no sender found |
 
 For files with an `error`, report the error and ask the user for the tokens (or skip the file).
@@ -137,8 +138,8 @@ Confirm which files were renamed successfully and report any errors.
 
 These rules define the four tokens. `classify.py` applies them: the date, sender, and topic
 questions it sends Jev encode this guidance, and the recipient, topic, and ignored-date lists it
-uses come from the user's `renamer_config.json`. The tables below are the values that config
-should hold. When a rule changes, update the config (and `classify.py` for date and sender
+uses come from the user's `renamer_config.json`. The recipient and ignored-date values below are
+placeholders that show the shape; the user's real values live only in their config. When a rule changes, update the config (and `classify.py` for date and sender
 handling) rather than overriding Jev's picks by hand.
 
 ### 1. Date (`YYYY-MM-DD`)
@@ -146,10 +147,10 @@ handling) rather than overriding Jev's picks by hand.
 Code finds every date-shaped span (ISO, `MM/DD/YYYY`, `MM/DD/YY`, `March 15, 2025`, `15 March 2025`)
 and Jev picks the document's own date (statement date, letter date, invoice date, etc.).
 
-**IGNORE these known biographical dates** — they are not document dates:
-- **1974-01-31** — Vincent Bortone's birthday (also: "January 31, 1974", "01/31/1974", etc.)
-- **1972-04-14** — Jennifer Bortone's birthday (also: "April 14, 1972", "04/14/1972", etc.)
-- **2012-10-20** — Vincent and Jennifer's wedding date (also: "October 20, 2012", "10/20/2012", etc.)
+**IGNORE known biographical dates** (birthdays, anniversaries) listed in the config's
+`ignore_dates` — they are not document dates, in any written form ("January 1, 1980",
+"01/01/1980", etc.). For example:
+- **1980-01-01** — Alex's birthday
 
 If multiple valid dates exist, prefer the document/statement/letter date over transaction dates or due dates.
 
@@ -157,19 +158,18 @@ If no date can be determined from the content, the file creation date is used (`
 
 ### 2. Recipient
 
-Determine who the document is addressed to or pertains to. Use exactly one of these values:
+Determine who the document is addressed to or pertains to. Jev picks exactly one of the config's
+`recipients` tokens. With the placeholder config:
 
 | Value | Use when the document is for... |
 |-------|-------------------------------|
-| `Vincent` | Vincent Bortone (also: Vince, Vincent M. Bortone, Mr. Bortone when context implies Vincent) |
-| `Jennifer` | Jennifer Bortone (also: Jen, Jennifer A. Bortone, Mrs. Bortone, Ms. Bortone) |
-| `Bortone` | Both Vincent and Jennifer, "The Bortones", "Bortone Family", or the household generally |
-| `Margaret` | Margaret Bortone (also: Peggy Bortone) |
-| `Strollo` | Richard Strollo or Vivian Strollo |
-| `Mel` | Camille Crifasi (also: Mel Crifasi, Aunt Mel) |
-| `MaryAnn` | Maryann Devitt (also: Aunt Maryann) |
-| `Coslett` | Bob Coslett or Peggy Coslett (also: Aunt Peggy, Uncle Bob) |
+| `Alex` | Alex Example (also: Al, A. Example, Mr. Example when context implies Alex) |
+| `Sam` | Sam Example (also: Samantha Example, Mrs. Example, Ms. Example) |
+| `Household` | Both Alex and Sam, "The Example Family", or the household generally |
 | `Unknown` | Anyone else, or when the recipient cannot be determined |
+
+Add one token per person or family group the user files paperwork for (relatives, a parent whose
+affairs they manage, and so on). Keep the `Unknown` entry.
 
 ### 3. Sender
 

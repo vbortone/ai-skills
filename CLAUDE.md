@@ -4,12 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal AI Skills library — reusable Claude Code skills + agent implementations. Skills are **user-agnostic**: they define folder structures, processes, and tooling, but never bake in any single user's personal data.
+Personal AI Skills library, packaged as a single plugin (`ai-skills`) for Claude Code, Cursor, and Codex. The repo is both the plugin and its own marketplace. Skills are **user-agnostic**: they define folder structures, processes, and tooling, but never bake in any single user's personal data.
 
 ## Repository Structure
 
-- `src/agents/` — AI agent implementations
-- `src/skills/` — Reusable Claude Code skills
+- `.claude-plugin/` — Claude Code `plugin.json` + `marketplace.json` (plugin source `./`)
+- `.cursor-plugin/` — Cursor `plugin.json` + `marketplace.json`
+- `.agents/plugins/marketplace.json` — Codex marketplace
+- `plugin.json` — Agent Plugins standard manifest (Codex portable layout)
+- `tools/check_manifests.py` — verifies the manifests agree (name/version/description) and every skill meets the Agent Skills spec. Run it plus `claude plugin validate .` after touching any manifest or SKILL.md frontmatter.
+- `tests/` — script tests, outside the plugin's component folders
+- `skills/` — the skills (the standard plugin location; every tool discovers `skills/<name>/SKILL.md`). Add agents under `agents/` and slash commands under `commands/` if they ever land.
   - `resume-tailor/` — Tailor a resume, cover letter, and recruiter pitch against one JD. Reads the user's `master_profile.md` and `tailor_config.json` from their working folder. Outputs ATS-safe DOCX via `scripts/build_resume_docx.py` + `scripts/build_cover_letter_docx.py`; post-render verifier (`scripts/verify_output.py`) enforces anonymization rules and page-count caps. Freshness helper (`scripts/refresh_profile.py`) walks the working folder for files newer than the profile's `last_refreshed`.
   - `application-tracker/` — Track job-search state across applications, recruiter threads, prior outcomes, and the user's task list. Sibling to resume-tailor; resume-tailor's Step 0 invokes application-tracker's three read scripts (`find_prior_applications.py`, `find_recruiter_threads.py`, `find_someday_matches.py`) for context. Owns the only write script in the pair: `archive_application.py` (move active → archived, stub `_outcome.md`).
   - `career-historian/` — Interview-driven accumulation of a deep per-employer job-history knowledge base (one "dossier" per company: projects, skills evidence, contacts/references, open questions). Upstream of resume-tailor: dossiers live at a user-configurable destination (`historian_config.json` — local folder or an MCP vault), and a local `career-history/INDEX.md` is always touched at session end so resume-tailor's freshness check discovers new history. Never edits `master_profile.md` directly. Read-only coverage script: `scripts/dossier_status.py`.
@@ -18,8 +23,8 @@ Personal AI Skills library — reusable Claude Code skills + agent implementatio
 Each skill follows the same internal layout:
 
 ```
-src/skills/<skill-name>/
-├── SKILL.md              # methodology, process, workflow steps
+skills/<skill-name>/
+├── SKILL.md              # exact case; frontmatter `name` must equal the folder name
 ├── references/           # generic guides referenced from SKILL.md
 ├── scripts/              # Python helpers, all emitting JSON on stdout
 ├── examples/             # bootstrap templates a new user copies
@@ -43,20 +48,22 @@ When changing a skill, keep personal data **out of the skill folder**:
 
 Skills with Python scripts ship a `requirements.txt`:
 
-- `src/skills/resume-tailor/requirements.txt` — `python-docx`, `docx2pdf` (requires MS Word on Windows), `pypdf`.
+- `skills/resume-tailor/requirements.txt` — `python-docx`, `docx2pdf` (requires MS Word on Windows), `pypdf`.
 
 To work on those scripts locally:
 
 ```bash
 uv venv .venv
 source .venv/Scripts/activate   # bash on Windows; .venv/bin/activate on Unix
-uv pip install -r src/skills/resume-tailor/requirements.txt
+uv pip install -r skills/resume-tailor/requirements.txt
 ```
 
 Scripts that produce structured output emit a single JSON object to stdout — keep that convention so SKILL.md workflows can parse the result. Errors go to stderr; exit codes are documented in each script's module docstring.
 
 ## Conventions
 
+- Keep SKILL.md frontmatter to `name` + `description` (description ≤ 1024 chars) so skills stay portable across tools. Reference files inside a skill by paths relative to the skill folder; a sibling skill's files are at `../<other-skill>/`.
+- Bump `version` in all three plugin manifests together when releasing.
 - [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) for every commit. Scope each commit to one skill where possible: `feat(resume-tailor): ...`, `refactor(application-tracker): ...`, `docs(resume-tailor): ...`.
 - Commit messages should explain **why**, not just what — these messages are the change log future Claude sessions read first.
 - Smoke-test scripts against a `tempfile.TemporaryDirectory()` before merging changes that touch script behavior — there's no automated test suite yet.

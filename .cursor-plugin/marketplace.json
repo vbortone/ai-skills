@@ -1,0 +1,17 @@
+{
+  "name": "vbortone-ai-skills",
+  "owner": {
+    "name": "Vincent Bortone",
+    "url": "https://github.com/vbortone"
+  },
+  "metadata": {
+    "description": "Vincent Bortone's personal AI skills."
+  },
+  "plugins": [
+    {
+      "name": "ai-skills",
+      "source": "./",
+      "description": "Job-search and household-paperwork skills: tailor resumes and cover letters to a job description, track applications and recruiter threads, interview-build per-employer career dossiers, and rename household documents into a consistent naming scheme."
+    }
+  ]
+}
