@@ -9,7 +9,7 @@ import pytest
 
 # Add the skill directory to the path so we can import the module directly
 SKILL_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "src", "skills", "renaming-file-personal-style")
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "skills", "renaming-file-personal-style")
 )
 sys.path.insert(0, SKILL_DIR)
 

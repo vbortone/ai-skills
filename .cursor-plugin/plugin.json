@@ -1,0 +1,20 @@
+{
+  "name": "ai-skills",
+  "version": "0.1.0",
+  "description": "Job-search and household-paperwork skills: tailor resumes and cover letters to a job description, track applications and recruiter threads, interview-build per-employer career dossiers, and rename household documents into a consistent naming scheme.",
+  "author": {
+    "name": "Vincent Bortone",
+    "url": "https://github.com/vbortone"
+  },
+  "homepage": "https://github.com/vbortone/ai-skills",
+  "repository": "https://github.com/vbortone/ai-skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "resume",
+    "job-search",
+    "career",
+    "file-renaming"
+  ],
+  "skills": "./skills/"
+}
