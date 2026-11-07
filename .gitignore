@@ -434,8 +434,11 @@ claude_logs/
 settings.local.json
 CLAUDE.local.md
 
-# Personal renamer config (the placeholder template in examples/ stays tracked)
-skills/renaming-file-personal-style/renamer_config.json
+# Personal renamer configs, anywhere (e.g. one left behind in the old src/skills/ path).
+# The placeholder templates in examples/ and evals/files/ stay tracked.
+renamer_config.json
+!skills/renaming-file-personal-style/examples/renamer_config.json
+!skills/renaming-file-personal-style/evals/files/renamer_config.json
 
 # skill-creator eval run output
 *-workspace/

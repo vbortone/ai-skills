@@ -13,7 +13,7 @@ def create_fixtures():
     with open(os.path.join(FIXTURES_DIR, "sample.txt"), "w", encoding="utf-8") as f:
         f.write(
             "March 15, 2025\n\n"
-            "Dear Vincent Bortone,\n\n"
+            "Dear Alex Example,\n\n"
             "Your Chase Bank statement is enclosed.\n\n"
             "Sincerely,\nChase Bank\n"
         )
@@ -26,7 +26,7 @@ def create_fixtures():
     page = doc.new_page()
     text = (
         "Statement Date: February 10, 2025\n\n"
-        "Account Holder: Jennifer Bortone\n"
+        "Account Holder: Sam Example\n"
         "Bank of America\n\n"
         "Checking Account Summary\n"
         "Beginning Balance: $5,000.00\n"
@@ -43,7 +43,7 @@ def create_fixtures():
     document = Document()
     document.add_paragraph("Date: January 5, 2025")
     document.add_paragraph("")
-    document.add_paragraph("To: Vincent and Jennifer Bortone")
+    document.add_paragraph("To: Alex and Sam Example")
     document.add_paragraph("From: Internal Revenue Service")
     document.add_paragraph("")
     document.add_paragraph("RE: 2024 Federal Tax Return Acknowledgment")
@@ -77,7 +77,7 @@ def create_fixtures():
     except OSError:
         font = ImageFont.load_default()
     draw.text((20, 20), "Invoice Date: April 1, 2025", fill="black", font=font)
-    draw.text((20, 60), "To: Margaret Bortone", fill="black", font=font)
+    draw.text((20, 60), "To: Pat Example", fill="black", font=font)
     draw.text((20, 100), "From: Acme Insurance", fill="black", font=font)
     img.save(img_path)
 
