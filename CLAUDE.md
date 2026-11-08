@@ -69,6 +69,18 @@ Scripts that produce structured output emit a single JSON object to stdout — k
 - Smoke-test scripts against a `tempfile.TemporaryDirectory()` before merging changes that touch script behavior — there's no automated test suite yet.
 - When a script is a write operation (e.g. `archive_application.py`), add a `--dry-run` flag and refuse to clobber existing destinations by default.
 
+## Git Commit Guidelines
+- You MUST format all git commit messages following the Conventional Commits specification.
+- Format: `<type>(<scope>): <description>` (e.g., `feat(auth): add login validation`)
+- Allowed Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- Message constraints:
+  - The `type` and optional `scope` must be strictly lowercase.
+  - The `description` must start with a lowercase letter and use the imperative mood (e.g., "add" not "added").
+  - Do NOT include a trailing period at the end of the subject line.
+  - Keep the subject line under 72 characters.
+- Multi-line messages: If an extended explanation is required, leave a blank line between the subject and the body.
+- Prohibitions: Never generate vague or low-effort messages like "fix bug", "update files", or "WIP".
+
 ## Notes
 
 No formal build / lint / test tooling is configured at the repo level. Per-skill Python scripts use ad-hoc smoke tests run against temp working folders during development. If formal tooling lands, update this file.
