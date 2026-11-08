@@ -26,9 +26,12 @@ Each eval has two kinds of assertions:
 
 ## Running
 
-Install deps first (`pip install -r ../requirements.txt`).
+Run commands from the repo root. These evals live outside `skills/` so they never ship with the
+plugin; the scripts import the skill from `skills/renaming-file-personal-style/`.
 
-**API key:** copy `evals/.env.example` to `evals/.env` and set `TYPESAFE_API_KEY`. The runner
+Install deps first (`pip install -r skills/renaming-file-personal-style/requirements.txt`).
+
+**API key:** copy `evals/renaming-file-personal-style/.env.example` to `.env` in the same folder and set `TYPESAFE_API_KEY`. The runner
 loads it on startup (or from `--env-file <path>`), and a variable already in your environment
 takes precedence. `.env` is gitignored; never commit a real key. The report's `env_loaded`
 field lists which variables came from the file.
@@ -39,14 +42,14 @@ sender normalization, text/image routing, image rendering within Jev's size limi
 that answers like a correct Jev. This catches regressions in code and graders but says nothing about Jev's judgment.
 
 ```bash
-python evals/run_evals.py --mode offline
+python evals/renaming-file-personal-style/run_evals.py --mode offline
 ```
 
 **Live, script level (real Jev):** runs the real `classify.py` CLI against TypeSafe, applies the
 proposals, and grades. If no key is found, the key-dependent evals are skipped; eval 6 always runs with the key unset.
 
 ```bash
-python evals/run_evals.py --mode live [--eval-id 3] [--keep ./eval-inboxes]
+python evals/renaming-file-personal-style/run_evals.py --mode live [--eval-id 3] [--keep ./eval-inboxes]
 ```
 
 Both print one JSON report and exit 0 only if every check passed. Each proposal includes the
@@ -59,7 +62,7 @@ token with the hand-picked name, and reports per threshold how much gets flagged
 auto-accepted tokens are wrong. Point it at the user's config and archive, never at repo fixtures:
 
 ```bash
-python evals/calibrate_threshold.py --config <working_folder>/renamer_config.json \
+python evals/renaming-file-personal-style/calibrate_threshold.py --config <working_folder>/renamer_config.json \
     "<archive folder>" [--sample 40] [--thresholds 0.5,0.6,0.7,0.8,0.9] [--details] > calib.json
 ```
 
@@ -74,7 +77,7 @@ inbox folder, and unsetting any `env.unset` variables for that run. Results go i
 `renaming-file-personal-style-workspace/iteration-N/` (gitignored). Then grade the inbox with:
 
 ```bash
-python evals/check_renames.py --eval-id <N> --dir <inbox after the run>
+python evals/renaming-file-personal-style/check_renames.py --eval-id <N> --dir <inbox after the run>
 ```
 
 The output uses the `grading.json` shape (`text`, `passed`, `evidence`). Have a grader agent judge
