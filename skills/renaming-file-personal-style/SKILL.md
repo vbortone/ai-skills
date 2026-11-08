@@ -147,12 +147,9 @@ handling) rather than overriding Jev's picks by hand.
 Code finds every date-shaped span (ISO, `MM/DD/YYYY`, `MM/DD/YY`, `March 15, 2025`, `15 March 2025`)
 and Jev picks the document's own date (statement date, letter date, invoice date, etc.).
 
-**IGNORE known biographical dates** (birthdays, anniversaries) listed in the config's
-`ignore_dates` — they are not document dates, in any written form ("January 1, 1980",
-"01/01/1980", etc.). For example:
-- **1980-01-01** — Alex's birthday
-
-If multiple valid dates exist, prefer the document/statement/letter date over transaction dates or due dates.
+Dates listed in the config's `ignore_dates` (birthdays, anniversaries) are dropped in code, in
+any written form, so they are never offered to Jev as a document date. If the user names another
+biographical date, add it to their config.
 
 If no date can be determined from the content, the file creation date is used (`source: "file_created"`).
 
@@ -180,37 +177,19 @@ normalizes it into the rules below. In image mode, Jev picks from the known send
 
 - **Company name takes priority** over an individual person's name when both appear.
 - **Replace spaces with dashes** (e.g., "Bank of America" → `Bank-of-America`).
-- Remove trailing corporate suffixes like "Inc.", "LLC", "Corp." unless they are essential to identify the sender.
-- Common abbreviations are acceptable (e.g., `IRS`, `US-Treasury`, `USPS`).
+- Trailing corporate suffixes ("Inc.", "LLC", "Corp.", "N.A.", and similar) are removed.
+- All-caps letterheads are title-cased; short acronyms stay as written (e.g., `IRS`, `USPS`, `CVS`).
 - If the sender cannot be determined, use `Unknown`.
 
 ### 4. Topic
 
-Choose the most fitting general topic for the document:
+Jev picks exactly one of the config's `topics` tokens; each token's description is what Jev reads.
+The starter list (`Financial`, `Taxes`, `Insurance`, `Health`, `Utility`, `Other`, and so on)
+lives in `<SKILL_DIR>/examples/renamer_config.json`, and the user's own list in their config is
+the one that applies.
 
-| Topic | Description |
-|-------|-------------|
-| `Financial` | Bank statements, account notices, general financial documents |
-| `Taxes` | Tax returns, W-2s, 1099s, IRS correspondence |
-| `Insurance` | Insurance policies, claims, EOBs (non-health) |
-| `CreditCard` | Credit card statements, offers, notices |
-| `Health` | Medical bills, health insurance EOBs, lab results, prescriptions |
-| `Home` | Mortgage, property tax, home repairs, HOA |
-| `Auto` | Car insurance, registration, repairs, DMV |
-| `Ad` | Advertisements, promotional mailers, marketing |
-| `Legal` | Legal notices, contracts, court documents |
-| `Employment` | Pay stubs, offer letters, HR documents |
-| `Retirement` | 401k, IRA, pension, Social Security |
-| `Investment` | Brokerage statements, stock/fund correspondence |
-| `Utility` | Electric, gas, water, phone, internet bills |
-| `Dining` | Restaurant receipts, food delivery, cafe charges |
-| `Bar` | Bar tabs, nightlife, alcohol-related receipts |
-| `Travel` | Flights, hotels, rental cars, vacation bookings, transportation |
-| `Shopping` | Retail purchases, online orders, general merchandise receipts |
-| `Other` | Anything that does not fit the above categories |
-
-- Jev can only choose a configured topic. To add one, add it to the config's `topics` (use dashes instead of spaces for multi-word topics).
-- If the document is too complicated to determine its topic, use `Other`.
+- To add a topic, add it to the config's `topics` (use dashes instead of spaces for multi-word topics). Keep the `Other` entry.
+- When the user supplies a topic by hand (an `error` result, or an edited name), use one of their configured tokens.
 
 ### 5. Extension
 
