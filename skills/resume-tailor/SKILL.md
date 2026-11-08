@@ -1,6 +1,6 @@
 ---
 name: resume-tailor
-description: Generate an ATS-friendly tailored resume, cover letter, and recruiter pitch against a specific job description. Use this skill whenever the user provides a job posting (URL or pasted text) and asks for a resume, application package, or wants to apply to a job - even if they just say "tailor a resume for this", "apply to this job", "draft an application", paste a JD with no instruction, or share a LinkedIn / Indeed / company-careers URL. Also triggers on phrases like "make a resume for", "customize my CV for", "I'm applying to", "what would my resume look like for", "write a cover letter for this role", or any combination of a job description and a request that implies application materials. The skill reads a `master_profile.md` from the user's working folder (their canonical career history, headlines, tailoring rules, and flags) and outputs a DOCX resume, DOCX cover letter, and a short recruiter pitch into a per-application subfolder.
+description: Generate an ATS-friendly tailored resume, cover letter, and recruiter pitch against a specific job description. Use this skill whenever a job posting is in play (pasted text, a job-board or careers-page URL, or a screenshot) and the user wants any application material for it - a resume or CV, a cover letter, a recruiter pitch, or the whole package - or simply says they are applying. Trigger even when the JD arrives with no instruction at all. The skill reads a `master_profile.md` from the user's working folder (their canonical career history, headlines, tailoring rules, and flags) and outputs a DOCX resume, DOCX cover letter, and a short recruiter pitch into a per-application subfolder.
 ---
 
 # Resume Tailor
@@ -57,9 +57,9 @@ If `application-tracker` isn't loaded, use whatever's already in Claude Code's s
 
 If the user pasted JD text, use it directly. If they gave a URL, fetch it through the following tiers in order — drop to the next tier only when the previous one fails or doesn't apply:
 
-1. **Job-search MCP connectors first.** When the URL's domain matches a connected job-board MCP (LinkedIn, ZipRecruiter, Dice, Indeed, or any platform exposing `search_jobs` / `get_job_details` tools), use the connector. Structured JD data — title, location, comp, requirements — beats raw HTML scraping every time, and the comp field is what Step 0's comp-posture check reads.
+1. **Job-search MCP connectors first.** When the URL's domain matches a connected job-board MCP (LinkedIn, ZipRecruiter, Dice, Indeed, or any platform exposing `search_jobs` / `get_job_details` tools), use the connector. Structured JD data — title, location, comp, requirements — beats raw HTML scraping every time, and the comp field is what the comp-posture check below reads.
 2. **WebFetch second.** Plain HTTP fetch with readability extraction. Works for most company-careers pages and bare JD pastes-as-URL.
-3. **Claude in Chrome third.** When WebFetch returns paywalled / login-required / JS-rendered content, try `mcp__Claude_in_Chrome__navigate` + `mcp__Claude_in_Chrome__get_page_text`. LinkedIn jobs pages, in particular, are reliably blocked by WebFetch but reachable through Chrome.
+3. **Claude in Chrome third.** When WebFetch returns paywalled / login-required / JS-rendered content, try the Claude in Chrome connector's navigate + get-page-text tools. LinkedIn jobs pages, in particular, are reliably blocked by WebFetch but reachable through Chrome.
 4. **Ask the user to paste fourth.** Only when tiers 1-3 all fail or don't apply. Tell the user which tier failed and why; never invent or summarize from a stub.
 
 Once you have the JD, confirm with the user: *"I see this is for {Position} at {Company}. Want me to proceed?"* — proceed unless they correct.
@@ -109,7 +109,7 @@ Read `master_profile.md` and `references/tailoring_playbook.md`. Construct a tai
 
 Use `scripts/build_resume_docx.py`. It accepts a JSON description of the tailored resume and produces an ATS-safe DOCX:
 - Single-column layout, no text boxes, no images, no tables for layout
-- Calibri 11pt body, 14-16pt name, 12pt headings
+- Calibri 11pt body, 20pt name, 13pt section headings
 - Standard section headings: Summary, Experience, Education, Skills, Certifications
 - Simple bullets (•), MM/YYYY dates, US English
 - See `references/ats_rules.md` for the full rule set
@@ -122,7 +122,7 @@ engine on Windows, Linux, and macOS). If LibreOffice isn't installed the gate is
 ### Step 5 - Cover letter + recruiter pitch
 
 Generate both in the same run unless the user opts out:
-- **Cover letter** - `scripts/build_cover_letter_docx.py`. 3-4 paragraphs: opening hook, 2 paragraphs of relevant experience tied to JD priorities, closing call-to-action. Read `references/cover_letter_guide.md`.
+- **Cover letter** - `scripts/build_cover_letter_docx.py`. 2-3 paragraphs: opening hook, relevant experience tied to JD priorities, then an honest gap (if any) and the close. Read `references/cover_letter_guide.md`.
 - **Recruiter pitch** - 3-4 sentences saved as Markdown. For phone screens and recruiter outreach. Read `references/recruiter_pitch_guide.md`.
 
 ### Step 6 - Save outputs
@@ -148,11 +148,11 @@ Create a per-application subfolder so the working folder stays organized:
 
 ```json
 {
-  "url": "https://www.linkedin.com/jobs/view/4399040955",
+  "url": "https://www.linkedin.com/jobs/view/0000000000",
   "source": "linkedin",
   "fetched_at": "2026-05-25T14:23:11Z",
   "fetched_via": "chrome-mcp",
-  "recruiter_thread_id": "kegan-smith-talentunify"
+  "recruiter_thread_id": "jane-doe-acme-recruiting"
 }
 ```
 
@@ -161,7 +161,7 @@ Field meanings:
 - `source` — short identifier for the source platform (`linkedin`, `ziprecruiter`, `indeed`, `dice`, `company-careers`, `recruiter-paste`, `pdf`, `screenshot`, etc.). Pick the most specific applicable.
 - `fetched_at` — ISO-8601 UTC timestamp of when the JD was captured.
 - `fetched_via` — which fetch tier from Step 1 succeeded: `mcp-connector`, `webfetch`, `chrome-mcp`, or `user-paste`. Tracks success rates of the tier order over time.
-- `recruiter_thread_id` — slug pointing to the recruiter section in the user's recruiter file when `application-tracker`'s `find_recruiter_threads.py` returned a match, otherwise `null`. Use a kebab-case slug derived from the heading (e.g. `## Kegan Smith — TalentUnify` → `kegan-smith-talentunify`).
+- `recruiter_thread_id` — slug pointing to the recruiter section in the user's recruiter file when `application-tracker`'s `find_recruiter_threads.py` returned a match, otherwise `null`. Use a kebab-case slug derived from the heading (e.g. `## Jane Doe — Acme Recruiting` → `jane-doe-acme-recruiting`).
 
 **Filename sanitization:**
 - Replace spaces with underscores
@@ -175,13 +175,13 @@ If `Applications/` doesn't exist yet, create it.
 
 End the response with:
 
-- A `computer://` link to the per-application subfolder.
+- A link to the per-application subfolder (a `computer://` link where the host supports it, otherwise the path).
 - A 2-sentence summary of what was tailored (headline chosen, top 3 emphasized themes).
 - The **render report** for each rendered DOCX. The build scripts emit a JSON object on stdout — parse it and surface these fields verbatim:
 
   | Field | Meaning | Surface as |
   | --- | --- | --- |
-  | `docx_path` | Path to the rendered DOCX | computer:// link |
+  | `docx_path` | Path to the rendered DOCX | Link, as for the subfolder |
   | `page_count` / `max_pages` / `page_over_cap` | Actual pages vs. cap | "Resume: 2 pages (cap 2). ✅" / "Cover letter: 2 pages (cap 1). ❌" |
   | `anonymization_violations` | List of forbidden tokens that appeared (empty = passed) | "Anonymization: passed" / "Anonymization: 1 violation — 'PwC' near 'Worked for PwC.'" |
   | `dash_normalizations_applied` | Count of en-dash / em-dash → hyphen substitutions during build | Mention only if non-zero (signal the upstream JSON layer is introducing Unicode dashes — likely a bug worth flagging) |
@@ -204,7 +204,7 @@ End the response with:
 - **Keep originals.** Do not modify `master_profile.md` outside the freshness-refresh flow, and never overwrite a previous Application folder. For a same-day iteration, suffix the new folder with `_v2`, `_v3`, etc.; for a re-application on a later date, use today's date in the folder name (it won't collide). See the re-application edge case below for the cross-date cases.
 - **ATS-safe.** No tables-for-layout, no text boxes, no headers/footers, no images. **Use plain hyphens (`-`) only - never use Unicode dashes like en-dash (U+2013) or em-dash (U+2014) - some ATS parsers render them as garbage.** See `references/ats_rules.md` for the full list. Build scripts auto-normalize both Unicode dashes defensively.
 - **Hard cap 2 pages on resumes.** Never spill to page 3. If long, trim per the user's "Tailoring Rules" in `master_profile.md`. See "Length decisions" in `references/tailoring_playbook.md`.
-- **Hard cap 1 page on cover letters.** 2-3 paragraphs, ~250-300 words. Use 2 when hook + experience fuse cleanly; 3 when there's a real differentiator or gap to address. See `references/cover_letter_guide.md`.
+- **Hard cap 1 page on cover letters.** 2-3 paragraphs, ~200-250 words, never more than 280. Use 2 when hook + experience fuse cleanly; 3 when there's a real differentiator or gap to address. See `references/cover_letter_guide.md`.
 - **Work-history scope is user-defined.** Always follow the user's "Tailoring Rules" section in `master_profile.md` for which employers to always include vs. default-off vs. cover-letter-context-only. If the user has not documented a rule for a decision, ASK them rather than guessing.
 - **Consolidate multi-role same-company entries.** When the user held multiple roles at one company, render as a single entry under the senior title with the FULL date span; merge bullets from junior and senior roles. See "Multi-role consolidation" in `references/tailoring_playbook.md`.
 
@@ -237,7 +237,7 @@ When the user adds new experience or wants to update facts, refresh the profile 
 
 ## Edge cases
 
-- **JD URL is LinkedIn jobs page** - WebFetch is reliably blocked. Try Claude in Chrome MCP (`mcp__Claude_in_Chrome__navigate` + `get_page_text`) before asking the user to paste. See Step 1 fetch order.
+- **JD URL is LinkedIn jobs page** - WebFetch is reliably blocked. Try the Claude in Chrome connector before asking the user to paste. See Step 1 fetch order.
 - **JD is a screenshot** - read the image, transcribe, confirm transcription with user.
 - **Multi-role JD ("we're hiring for several positions")** - ask which position to target before proceeding.
 - **JD demands certifications the user doesn't have** - list adjacent ones; flag in tailoring notes.
