@@ -16,8 +16,8 @@ Modes:
 Usage:
     python run_evals.py --mode offline|live [--eval-id N ...] [--keep <dir>] [--env-file <path>]
 
-Secrets: before running, the runner loads KEY=VALUE lines from evals/.env (gitignored; copy
-evals/.env.example) or from --env-file. Variables already set in the environment win.
+Secrets: before running, the runner loads KEY=VALUE lines from evals/renaming-file-personal-style/.env (gitignored; copy
+evals/renaming-file-personal-style/.env.example) or from --env-file. Variables already set in the environment win.
 
 Output: one JSON object on stdout: {"mode", "passed", "failed", "skipped", "unit_checks", "evals"}.
 Exit codes: 0 everything passed (skips allowed), 1 a check failed, 2 usage error.
@@ -35,7 +35,8 @@ import sys
 import tempfile
 
 EVALS_DIR = os.path.dirname(os.path.abspath(__file__))
-SKILL_DIR = os.path.dirname(EVALS_DIR)
+REPO_ROOT = os.path.dirname(os.path.dirname(EVALS_DIR))
+SKILL_DIR = os.path.join(REPO_ROOT, "skills", "renaming-file-personal-style")
 CONFIG = os.path.join(EVALS_DIR, "files", "renamer_config.json")
 sys.path.insert(0, SKILL_DIR)
 sys.path.insert(0, EVALS_DIR)
@@ -210,7 +211,7 @@ def run_eval(eval_def: dict, mode: str, keep: str | None) -> dict:
     inbox = tempfile.mkdtemp(prefix=f"rename-eval-{eval_def['id']}-")
     try:
         for rel in eval_def["files"]:
-            shutil.copy(os.path.join(SKILL_DIR, rel), inbox)
+            shutil.copy(os.path.join(REPO_ROOT, rel), inbox)
         todo = sorted(os.path.join(inbox, n) for n in os.listdir(inbox) if not ALREADY_NAMED.match(n))
         code, output = classify_offline(todo) if mode == "offline" else classify_live(todo, unset)
 
@@ -239,7 +240,7 @@ def main() -> None:
     parser.add_argument("--eval-id", type=int, action="append", help="run only these ids (repeatable)")
     parser.add_argument("--keep", help="copy each finished inbox here for inspection")
     parser.add_argument("--env-file", default=os.path.join(EVALS_DIR, ".env"),
-                        help="dotenv file with TYPESAFE_API_KEY (default: evals/.env)")
+                        help="dotenv file with TYPESAFE_API_KEY (default: evals/renaming-file-personal-style/.env)")
     args = parser.parse_args()
     env_loaded = load_env_file(args.env_file)
 

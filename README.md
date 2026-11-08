@@ -79,6 +79,7 @@ pip install -r skills/renaming-file-personal-style/requirements.txt
 .agents/plugins/marketplace.json   Codex marketplace
 plugin.json                        Agent Plugins standard manifest (Codex portable layout)
 skills/<name>/SKILL.md             the skills
+evals/<skill>/                     skill evals (kept out of skills/, not loaded by any tool)
 tests/                             script tests (not loaded by any tool)
 tools/check_manifests.py           keeps the manifests and skills consistent
 ```

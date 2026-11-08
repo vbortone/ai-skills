@@ -25,7 +25,7 @@ Usage:
 
 Directories are searched recursively. Labels are kept only when their recipient and topic are in
 the config (older naming schemes are skipped and counted). Reads TYPESAFE_API_KEY from the
-environment or evals/.env, like run_evals.py.
+environment or evals/renaming-file-personal-style/.env, like run_evals.py.
 
 Output: one JSON object on stdout: {"model", "config_threshold", "labeled_found", "sampled",
 "skipped", "errors", "thresholds": [...], "suggested", "files"? (with --details)}.
@@ -45,7 +45,8 @@ import sys
 import tempfile
 
 EVALS_DIR = os.path.dirname(os.path.abspath(__file__))
-SKILL_DIR = os.path.dirname(EVALS_DIR)
+REPO_ROOT = os.path.dirname(os.path.dirname(EVALS_DIR))
+SKILL_DIR = os.path.join(REPO_ROOT, "skills", "renaming-file-personal-style")
 sys.path.insert(0, SKILL_DIR)
 sys.path.insert(0, EVALS_DIR)
 import classify  # noqa: E402
@@ -139,7 +140,7 @@ def main() -> None:
         print("Error: typesafe-sdk is not installed (pip install -r requirements.txt)", file=sys.stderr)
         sys.exit(2)
     if not os.environ.get("TYPESAFE_API_KEY", "").strip():
-        print("Error: TYPESAFE_API_KEY is not set (evals/.env or the environment)", file=sys.stderr)
+        print("Error: TYPESAFE_API_KEY is not set (evals/renaming-file-personal-style/.env or the environment)", file=sys.stderr)
         sys.exit(2)
 
     labeled, skipped = find_labeled(args.paths, config)

@@ -26,7 +26,8 @@ import re
 import sys
 
 EVALS_DIR = os.path.dirname(os.path.abspath(__file__))
-SKILL_DIR = os.path.dirname(EVALS_DIR)
+REPO_ROOT = os.path.dirname(os.path.dirname(EVALS_DIR))
+SKILL_DIR = os.path.join(REPO_ROOT, "skills", "renaming-file-personal-style")
 sys.path.insert(0, SKILL_DIR)
 from classify import file_creation_date  # noqa: E402
 
@@ -48,7 +49,7 @@ def check(eval_def: dict, inbox: str) -> list[dict]:
 
     for name, fixture in checks.get("unchanged", {}).items():
         path = os.path.join(inbox, name)
-        with open(os.path.join(SKILL_DIR, fixture), "rb") as f:
+        with open(os.path.join(REPO_ROOT, fixture), "rb") as f:
             expected = f.read()
         if not os.path.exists(path):
             passed, evidence = False, f"{name} is missing"

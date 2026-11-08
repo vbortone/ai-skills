@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-make_image_fixtures.py — Regenerate the image-mode eval fixtures in evals/files/.
+make_image_fixtures.py — Regenerate the image-mode eval fixtures in evals/renaming-file-personal-style/files/.
 
 Writes two documents that have no text layer, so classify.py must send them to Jev as images:
   * scanned_eob.jpg          a photographed insurance EOB (JPEG)
