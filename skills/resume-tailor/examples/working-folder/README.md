@@ -61,7 +61,7 @@ Drives the post-render verifier (`scripts/verify_output.py`). Only code-level co
 }
 ```
 
-If you delete the `anonymization` section (or the whole file), the verifier logs an info note and skips the anonymization check entirely. The page-count check (resume ≤ 2 pages, cover letter ≤ 1 page) runs unconditionally.
+If you delete the `anonymization` section (or the whole file), the verifier logs an info note and skips the anonymization check entirely. The page-count check (resume ≤ 2 pages, cover letter ≤ 1 page) runs whenever LibreOffice is installed; without it the check is skipped, not failed, and the render report records `page_check_reason`.
 
 ## What lives where
 

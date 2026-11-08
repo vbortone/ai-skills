@@ -294,7 +294,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.no_strict_pages:
             exit_code |= 2
             print(
-                "Tighten to 2-3 paragraphs / ~250-300 words. See references/cover_letter_guide.md.",
+                "Tighten to 2-3 paragraphs / ~200-250 words. See references/cover_letter_guide.md.",
                 file=sys.stderr,
             )
 

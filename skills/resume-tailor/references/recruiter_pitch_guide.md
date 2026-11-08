@@ -13,7 +13,7 @@ Output as Markdown in `recruiter_pitch.md`. Two variants:
 1. **Who I am right now** - current role + employer in one breath.
 2. **Track record** - one sentence that ties two career chapters together with a quantified outcome.
 3. **Why this role** - one sentence that connects the JD's #1 priority to one of the user's signature wins.
-4. *(Optional)* **What I'm looking for** - one sentence on what kind of role he wants next.
+4. *(Optional)* **What I'm looking for** - one sentence on what kind of role the user wants next.
 
 ### Variant 2 - LinkedIn DM / cold outreach (≤500 chars)
 

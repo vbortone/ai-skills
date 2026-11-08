@@ -18,8 +18,6 @@ Before any bullet ships, scan the user's `master_profile.md` → **Flags & Items
 
 ### 1. Decode the JD
 
-Read the JD twice. First pass to understand the role; second pass to extract structured signals.
-
 Pull out:
 - **Title and seniority** — "Director of Engineering" vs. "Staff Engineer" vs. "Solution Architect" demand different framings of the same career.
 - **Must-haves** — anything in "Required" / "Minimum qualifications" / "5+ years of X". These are ATS gates.

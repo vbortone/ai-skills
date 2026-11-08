@@ -21,7 +21,7 @@ The `build_resume_docx.py` script bakes most of these rules in. This document ex
 
 ## Soft rules (follow unless there's a strong reason not to)
 
-- **Body font size: 11pt.** Name: 14–18pt. Section headings: 12–14pt bold.
+- **Body font size: 11pt.** Name: 14–20pt. Section headings: 12–14pt bold.
 - **Margins: 0.5"–1" all sides.** Don't go below 0.5" or text gets cut on print.
 - **Line spacing: single (1.0) or 1.15.** Avoid 1.5 or double; wastes space.
 - **Active voice, past tense for prior roles, present tense for current role.**

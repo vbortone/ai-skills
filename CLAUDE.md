@@ -49,7 +49,7 @@ When changing a skill, keep personal data **out of the skill folder**:
 
 Skills with Python scripts ship a `requirements.txt`:
 
-- `skills/resume-tailor/requirements.txt` — `python-docx`, `docx2pdf` (requires MS Word on Windows), `pypdf`.
+- `skills/resume-tailor/requirements.txt` — `python-docx`, `pypdf`. The page-count gate also uses an external LibreOffice install (`soffice`), not a pip package.
 
 To work on those scripts locally:
 

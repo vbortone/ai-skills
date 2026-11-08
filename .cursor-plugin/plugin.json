@@ -1,6 +1,6 @@
 {
   "name": "ai-skills",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Job-search and household-paperwork skills: tailor resumes and cover letters to a job description, track applications and recruiter threads, interview-build per-employer career dossiers, and rename household documents into a consistent naming scheme.",
   "author": {
     "name": "Vincent Bortone",
